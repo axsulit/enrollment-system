@@ -141,4 +141,21 @@ public class AuthController {
 
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
     }
+
+    @GetMapping("/user/{id}")
+    public ResponseEntity<?> getUserById(@PathVariable Long id) {
+        return userRepository.findById(id)
+                .map(user -> ResponseEntity.ok(new UserDetailsResponse(
+                        user.getId(),
+                        user.getUsername(),
+                        user.getEmail(),
+                        user.getFirstName(),
+                        user.getLastName(),
+                        user.getDegreeProgram(),
+                        user.getRoles().stream()
+                                .map(role -> role.getName())
+                                .collect(Collectors.toList())
+                )))
+                .orElse(ResponseEntity.notFound().build());
+    }
 } 
