@@ -9,7 +9,40 @@ services:
       - JWT_SECRET=${JWT_SECRET}
     networks:
       - enrollment-network
+    depends_on:
+      - auth-service
+
+  auth-service:
+    build: ./auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://enrollment-db:5432/enrollment_db?currentSchema=auth
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - JWT_SECRET=${JWT_SECRET}
+    networks:
+      - enrollment-network
+    depends_on:
+      - enrollment-db
+
+  enrollment-db:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=enrollment_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - enrollment-db-data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    networks:
+      - enrollment-network
 
 networks:
   enrollment-network:
-    driver: bridge 
+    driver: bridge
+
+volumes:
+  enrollment-db-data: 
