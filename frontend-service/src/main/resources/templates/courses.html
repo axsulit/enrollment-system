@@ -182,13 +182,14 @@
                     <th>Time</th>
                     <th>Professor</th>
                     <th>Mode</th>
+                    <th>Venue</th>
                     <th>Capacity</th>
                     <th>Action</th>
                 </tr>
             </thead>
             <tbody id="courses-list">
                 <tr>
-                    <td colspan="8" style="text-align: center;">Loading courses...</td>
+                    <td colspan="9" style="text-align: center;">Loading courses...</td>
                 </tr>
             </tbody>
         </table>
@@ -254,13 +255,15 @@
                 const coursesList = document.getElementById('courses-list');
                 
                 if (courses.length === 0) {
-                    coursesList.innerHTML = '<tr><td colspan="8" style="text-align: center;">No courses available</td></tr>';
+                    coursesList.innerHTML = '<tr><td colspan="9" style="text-align: center;">No courses available</td></tr>';
                     return;
                 }
 
                 coursesList.innerHTML = courses.map(course => {
                     const isEnrolled = activeEnrollments.some(e => e.courseId === course.id);
                     const isFull = course.currentEnrollees >= course.maxEnrollees;
+                    const mode = formatMode(course.modeOfLearning);
+                    const showVenue = course.modeOfLearning === 'F2F' || course.modeOfLearning === 'HYB';
                     
                     return `
                     <tr>
@@ -269,7 +272,8 @@
                         <td>${course.scheduleDays.join(', ')}</td>
                         <td>${formatTime(course.startTime)} - ${formatTime(course.endTime)}</td>
                         <td>${course.professorName}</td>
-                        <td>${formatMode(course.modeOfLearning)}</td>
+                        <td>${mode}</td>
+                        <td>${showVenue ? (course.venue || 'TBA') : 'N/A'}</td>
                         <td>${course.currentEnrollees}/${course.maxEnrollees}</td>
                         <td>
                             <button class="enroll-button" 
@@ -305,7 +309,7 @@
         const modes = {
             'F2F': 'Face-to-Face',
             'HYB': 'Hybrid',
-            'OL': 'Online'
+            'FOL': 'Full Online'
         };
         return modes[mode] || mode;
     }

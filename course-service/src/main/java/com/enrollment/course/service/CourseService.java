@@ -51,6 +51,7 @@ public class CourseService {
         course.setEndTime(courseDetails.getEndTime());
         course.setMaxEnrollees(courseDetails.getMaxEnrollees());
         course.setModeOfLearning(courseDetails.getModeOfLearning());
+        course.setVenue(courseDetails.getVenue());
         course.setProfessorName(courseDetails.getProfessorName());
 
         return courseRepository.save(course);

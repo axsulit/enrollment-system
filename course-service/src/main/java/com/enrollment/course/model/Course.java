@@ -39,6 +39,9 @@ public class Course {
     @Enumerated(EnumType.STRING)
     private ModeOfLearning modeOfLearning;
 
+    @Column(name = "venue")
+    private String venue;
+
     @Column(name = "professor_name", nullable = false)
     private String professorName;
 
@@ -53,5 +56,13 @@ public class Course {
         FOL, // Full Online
         HYB, // Hybrid
         F2F  // Face to Face
+    }
+
+    @PrePersist
+    @PreUpdate
+    protected void validateVenue() {
+        if ((modeOfLearning == ModeOfLearning.F2F || modeOfLearning == ModeOfLearning.HYB) && (venue == null || venue.trim().isEmpty())) {
+            throw new IllegalArgumentException("Venue is required for Face-to-Face and Hybrid classes");
+        }
     }
 } 
