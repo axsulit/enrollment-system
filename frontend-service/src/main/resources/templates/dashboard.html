@@ -3,34 +3,131 @@
 <head>
     <title>Dashboard - Enrollment System</title>
     <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .student-info {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .nav-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .nav-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .nav-button:hover {
+            background: #0056b3;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .logout-button {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .logout-button:hover {
+            background: #c82333;
+        }
+    </style>
 </head>
 <body>
+    <script>
+    // Immediately check authentication before showing content
+    (function() {
+        const token = localStorage.getItem('jwtToken');
+        if (!token) {
+            window.location.replace('/login');
+        }
+    })();
+    </script>
+
     <div class="dashboard-container">
-        <header>
-            <h1>Enrollment System Dashboard</h1>
-            <form th:action="@{/api/auth/logout}" method="post">
-                <button type="submit" class="btn btn-logout">Logout</button>
-            </form>
-        </header>
-        <main>
-            <div class="dashboard-content">
-                <h2>Welcome to your Dashboard</h2>
-                <div class="dashboard-menu">
-                    <div class="menu-item">
-                        <h3>Course Enrollment</h3>
-                        <a href="/courses" class="btn btn-primary">View Available Courses</a>
-                    </div>
-                    <div class="menu-item">
-                        <h3>My Courses</h3>
-                        <a href="/my-courses" class="btn btn-primary">View My Courses</a>
-                    </div>
-                    <div class="menu-item">
-                        <h3>Grades</h3>
-                        <a href="/grades" class="btn btn-primary">View Grades</a>
-                    </div>
-                </div>
+        <div class="header">
+            <h1>Student Dashboard</h1>
+            <button onclick="handleLogout()" class="logout-button">Logout</button>
+        </div>
+
+        <div class="student-info">
+            <h2>Student Information</h2>
+            <div id="studentDetails">
+                Loading student details...
             </div>
-        </main>
+        </div>
+
+        <div class="nav-buttons">
+            <button onclick="location.href='/courses'" class="nav-button">View Available Courses</button>
+            <button onclick="location.href='/enrollments'" class="nav-button">View My Enrollments</button>
+            <button onclick="location.href='/grades'" class="nav-button">View My Grades</button>
+        </div>
     </div>
+
+    <script>
+    async function loadStudentDetails() {
+        try {
+            const token = localStorage.getItem('jwtToken');
+            if (!token) {
+                window.location.replace('/login');
+                return;
+            }
+
+            const response = await fetch('http://localhost:8080/api/auth/user', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const studentDetails = document.getElementById('studentDetails');
+                studentDetails.innerHTML = `
+                    <p><strong>Username:</strong> ${data.username}</p>
+                    <p><strong>Role:</strong> ${data.roles.join(', ')}</p>
+                `;
+            } else if (response.status === 401) {
+                // Token expired or invalid
+                localStorage.removeItem('jwtToken');
+                window.location.replace('/login');
+            } else {
+                throw new Error('Failed to load user details');
+            }
+        } catch (error) {
+            console.error('Error loading student details:', error);
+            const studentDetails = document.getElementById('studentDetails');
+            studentDetails.innerHTML = 'Error loading student details. Please try again later.';
+        }
+    }
+
+    function handleLogout() {
+        localStorage.removeItem('jwtToken');
+        window.location.replace('/login?logout');
+    }
+
+    // Load student details after ensuring we're authenticated
+    loadStudentDetails();
+    </script>
 </body>
 </html> 

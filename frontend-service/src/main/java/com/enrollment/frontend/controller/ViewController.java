@@ -25,4 +25,19 @@ public class ViewController {
     public String dashboard() {
         return "dashboard";
     }
+
+    @GetMapping("/courses")
+    public String courses() {
+        return "courses";
+    }
+
+    @GetMapping("/enrollments")
+    public String enrollments() {
+        return "enrollments";
+    }
+
+    @GetMapping("/grades")
+    public String grades() {
+        return "grades";
+    }
 } 

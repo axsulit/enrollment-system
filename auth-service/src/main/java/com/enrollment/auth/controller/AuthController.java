@@ -6,6 +6,7 @@ import com.enrollment.auth.payload.request.LoginRequest;
 import com.enrollment.auth.payload.request.SignupRequest;
 import com.enrollment.auth.payload.response.JwtResponse;
 import com.enrollment.auth.payload.response.MessageResponse;
+import com.enrollment.auth.payload.response.UserDetailsResponse;
 import com.enrollment.auth.repository.RoleRepository;
 import com.enrollment.auth.repository.UserRepository;
 import com.enrollment.auth.security.JwtUtils;
@@ -54,6 +55,32 @@ public class AuthController {
                 userDetails.getUsername(),
                 userDetails.getEmail(),
                 roles));
+    }
+
+    @GetMapping("/user")
+    public ResponseEntity<?> getUserDetails(@RequestHeader("Authorization") String authHeader) {
+        try {
+            String jwt = authHeader.substring(7); // Remove "Bearer " prefix
+            String username = jwtUtils.getUserNameFromJwtToken(jwt);
+            
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            List<String> roles = user.getRoles().stream()
+                    .map(Role::getName)
+                    .collect(Collectors.toList());
+            
+            return ResponseEntity.ok(new UserDetailsResponse(
+                    user.getId(),
+                    user.getUsername(),
+                    user.getEmail(),
+                    user.getFirstName(),
+                    user.getLastName(),
+                    roles
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: " + e.getMessage()));
+        }
     }
 
     @PostMapping("/register")
