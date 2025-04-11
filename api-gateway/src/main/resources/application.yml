@@ -1,0 +1,49 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: auth-service
+          uri: http://auth-service:8081
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=1
+
+        - id: course-service
+          uri: http://course-service:8082
+          predicates:
+            - Path=/api/courses/**
+          filters:
+            - StripPrefix=1
+            - name: JwtAuthenticationFilter
+
+        - id: enrollment-service
+          uri: http://enrollment-service:8083
+          predicates:
+            - Path=/api/enrollment/**
+          filters:
+            - StripPrefix=1
+            - name: JwtAuthenticationFilter
+
+        - id: grades-service
+          uri: http://grades-service:8084
+          predicates:
+            - Path=/api/grades/**
+          filters:
+            - StripPrefix=1
+            - name: JwtAuthenticationFilter
+
+jwt:
+  secret: ${JWT_SECRET:your-256-bit-secret-key-here}
+  expiration: 86400000 # 24 hours in milliseconds
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics 
