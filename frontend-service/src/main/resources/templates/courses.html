@@ -176,6 +176,7 @@
         <table class="courses-table">
             <thead>
                 <tr>
+                    <th>ID</th>
                     <th>Course Code</th>
                     <th>Course Name</th>
                     <th>Schedule</th>
@@ -189,7 +190,7 @@
             </thead>
             <tbody id="courses-list">
                 <tr>
-                    <td colspan="9" style="text-align: center;">Loading courses...</td>
+                    <td colspan="10" style="text-align: center;">Loading courses...</td>
                 </tr>
             </tbody>
         </table>
@@ -255,7 +256,7 @@
                 const coursesList = document.getElementById('courses-list');
                 
                 if (courses.length === 0) {
-                    coursesList.innerHTML = '<tr><td colspan="9" style="text-align: center;">No courses available</td></tr>';
+                    coursesList.innerHTML = '<tr><td colspan="10" style="text-align: center;">No courses available</td></tr>';
                     return;
                 }
 
@@ -267,6 +268,7 @@
                     
                     return `
                     <tr>
+                        <td>${course.id}</td>
                         <td>${course.courseCode}</td>
                         <td>${course.courseName}</td>
                         <td>${course.scheduleDays.join(', ')}</td>
