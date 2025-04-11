@@ -147,10 +147,30 @@
 
     <script>
     // Check if already logged in
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', async function() {
         const token = localStorage.getItem('jwtToken');
         if (token) {
-            window.location.href = '/dashboard';
+            try {
+                const response = await fetch('http://localhost:8080/api/auth/user', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const userData = await response.json();
+                    if (userData.roles.includes('ROLE_FACULTY')) {
+                        window.location.href = '/faculty/grades';
+                    } else {
+                        window.location.href = '/dashboard';
+                    }
+                } else {
+                    localStorage.removeItem('jwtToken');
+                }
+            } catch (error) {
+                console.error('Error checking authentication:', error);
+                localStorage.removeItem('jwtToken');
+            }
         }
     });
 
@@ -173,8 +193,25 @@
                 const data = await response.json();
                 if (data.token) {
                     localStorage.setItem('jwtToken', data.token);
-                    // Use replace instead of href to prevent back button from returning to login
-                    window.location.replace('/dashboard');
+                    
+                    // Get user details to check role
+                    const userResponse = await fetch('http://localhost:8080/api/auth/user', {
+                        headers: {
+                            'Authorization': `Bearer ${data.token}`
+                        }
+                    });
+                    
+                    if (userResponse.ok) {
+                        const userData = await userResponse.json();
+                        // Check if user is faculty and redirect accordingly
+                        if (userData.roles.includes('ROLE_FACULTY')) {
+                            window.location.replace('/faculty/grades');
+                        } else {
+                            window.location.replace('/dashboard');
+                        }
+                    } else {
+                        window.location.replace('/dashboard');
+                    }
                 } else {
                     document.getElementById('error-message').style.display = 'block';
                 }
