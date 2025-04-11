@@ -177,9 +177,11 @@
                 const data = await response.json();
                 const studentDetails = document.getElementById('studentDetails');
                 studentDetails.innerHTML = `
-                    <p><strong>ID Number:</strong> ${data.id}</p>
-                    <p><strong>Username:</strong> ${data.username}</p>
-                    <p><strong>Role:</strong> ${data.roles.join(', ').replace('ROLE_', '')}</p>
+                    <p><strong>Student ID:</strong> ${data.id}</p>
+                    <p><strong>First Name:</strong> ${data.firstName}</p>
+                    <p><strong>Last Name:</strong> ${data.lastName}</p>
+                    <p><strong>Degree Program:</strong> ${data.degreeProgram || 'Not specified'}</p>
+                    <p><strong>Email:</strong> ${data.email}</p>
                 `;
             } else if (response.status === 401) {
                 localStorage.removeItem('jwtToken');

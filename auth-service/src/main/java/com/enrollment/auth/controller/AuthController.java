@@ -76,6 +76,7 @@ public class AuthController {
                     user.getEmail(),
                     user.getFirstName(),
                     user.getLastName(),
+                    user.getDegreeProgram(),
                     roles
             ));
         } catch (Exception e) {
@@ -103,7 +104,8 @@ public class AuthController {
             signUpRequest.getEmail(),
             encoder.encode(signUpRequest.getPassword()),
             signUpRequest.getFirstName(),
-            signUpRequest.getLastName()
+            signUpRequest.getLastName(),
+            signUpRequest.getDegreeProgram()
         );
 
         Set<Role> roles = new HashSet<>();

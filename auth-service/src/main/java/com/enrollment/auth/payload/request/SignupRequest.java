@@ -30,5 +30,8 @@ public class SignupRequest {
     @Size(max = 50)
     private String lastName;
 
+    @Size(max = 100)
+    private String degreeProgram;
+
     private Set<String> roles;
 } 

@@ -13,5 +13,6 @@ public class UserDetailsResponse {
     private String email;
     private String firstName;
     private String lastName;
+    private String degreeProgram;
     private List<String> roles;
 } 

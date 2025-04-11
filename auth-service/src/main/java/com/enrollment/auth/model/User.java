@@ -29,6 +29,9 @@ public class User {
     @Column(name = "last_name", nullable = false)
     private String lastName;
 
+    @Column(name = "degree_program")
+    private String degreeProgram;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -56,11 +59,16 @@ public class User {
 
     public User() {}
 
-    public User(String username, String email, String password, String firstName, String lastName) {
+    public User(String username, String email, String password, String firstName, String lastName, String degreeProgram) {
         this.username = username;
         this.email = email;
         this.password = password;
         this.firstName = firstName;
         this.lastName = lastName;
+        this.degreeProgram = degreeProgram;
+    }
+
+    public User(String username, String email, String password, String firstName, String lastName) {
+        this(username, email, password, firstName, lastName, null);
     }
 } 
