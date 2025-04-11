@@ -41,6 +41,9 @@ public class Enrollment {
     @Column(name = "enrolled_at", nullable = false)
     private LocalDateTime enrolledAt;
 
+    @Column(name = "dropped_at")
+    private LocalDateTime droppedAt;
+
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 

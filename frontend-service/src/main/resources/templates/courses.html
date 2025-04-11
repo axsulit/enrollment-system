@@ -73,6 +73,18 @@
             border-radius: 4px;
             display: none;
         }
+        .success-message {
+            color: #155724;
+            padding: 10px;
+            margin: 10px 0;
+            background: #d4edda;
+            border-radius: 4px;
+            display: none;
+        }
+        .enroll-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -96,6 +108,7 @@
         </div>
 
         <div id="error-message" class="error-message"></div>
+        <div id="success-message" class="success-message"></div>
 
         <table class="courses-table">
             <thead>
@@ -119,12 +132,52 @@
     </div>
 
     <script>
+    let currentStudentId = null;
+
+    async function loadUserDetails() {
+        try {
+            const token = localStorage.getItem('jwtToken');
+            if (!token) {
+                window.location.replace('/login');
+                return;
+            }
+
+            const response = await fetch('http://localhost:8080/api/auth/user', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                const userData = await response.json();
+                currentStudentId = userData.id;
+            } else if (response.status === 401) {
+                localStorage.removeItem('jwtToken');
+                window.location.replace('/login');
+            }
+        } catch (error) {
+            console.error('Error loading user details:', error);
+        }
+    }
+
     async function loadCourses() {
         try {
             const token = localStorage.getItem('jwtToken');
             if (!token) {
                 window.location.replace('/login');
                 return;
+            }
+
+            // Get active enrollments to check which courses the student is already enrolled in
+            const enrollmentsResponse = await fetch(`http://localhost:8080/api/enrollments/student/${currentStudentId}/active`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            let activeEnrollments = [];
+            if (enrollmentsResponse.ok) {
+                activeEnrollments = await enrollmentsResponse.json();
             }
 
             const response = await fetch('http://localhost:8080/api/courses', {
@@ -142,7 +195,11 @@
                     return;
                 }
 
-                coursesList.innerHTML = courses.map(course => `
+                coursesList.innerHTML = courses.map(course => {
+                    const isEnrolled = activeEnrollments.some(e => e.courseId === course.id);
+                    const isFull = course.currentEnrollees >= course.maxEnrollees;
+                    
+                    return `
                     <tr>
                         <td>${course.courseCode}</td>
                         <td>${course.courseName}</td>
@@ -152,12 +209,14 @@
                         <td>${formatMode(course.modeOfLearning)}</td>
                         <td>${course.currentEnrollees}/${course.maxEnrollees}</td>
                         <td>
-                            <button class="enroll-button" onclick="handleEnroll(${course.id})">
-                                Enroll
+                            <button class="enroll-button" 
+                                onclick="handleEnroll('${course.id}', '${course.courseCode}', '${course.courseName}', '${course.scheduleDays.join(',')}', '${course.professorName}')"
+                                ${isEnrolled || isFull ? 'disabled' : ''}>
+                                ${isEnrolled ? 'Enrolled' : isFull ? 'Full' : 'Enroll'}
                             </button>
                         </td>
                     </tr>
-                `).join('');
+                `}).join('');
             } else if (response.status === 401) {
                 localStorage.removeItem('jwtToken');
                 window.location.replace('/login');
@@ -188,9 +247,77 @@
         return modes[mode] || mode;
     }
 
-    function handleEnroll(courseId) {
-        // This function will be implemented later
-        console.log('Enroll clicked for course:', courseId);
+    async function handleEnroll(courseId, courseCode, courseName, scheduleDays, professorName) {
+        try {
+            const token = localStorage.getItem('jwtToken');
+            if (!token) {
+                window.location.replace('/login');
+                return;
+            }
+
+            // First, try to increment the course capacity
+            const incrementResponse = await fetch(`http://localhost:8080/api/courses/${courseId}/enroll`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!incrementResponse.ok) {
+                throw new Error('Course is full or unavailable');
+            }
+
+            // If capacity increment was successful, create the enrollment
+            const enrollmentData = {
+                studentId: currentStudentId,
+                courseId: parseInt(courseId),
+                courseCode: courseCode,
+                courseName: courseName,
+                scheduleDays: scheduleDays,
+                professorName: professorName,
+                status: 'ENROLLED'
+            };
+
+            const enrollResponse = await fetch('http://localhost:8080/api/enrollments', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(enrollmentData)
+            });
+
+            if (enrollResponse.ok) {
+                const successMessage = document.getElementById('success-message');
+                successMessage.textContent = `Successfully enrolled in ${courseCode}`;
+                successMessage.style.display = 'block';
+                setTimeout(() => {
+                    successMessage.style.display = 'none';
+                }, 3000);
+
+                // Reload the courses list to update enrollment status and capacity
+                loadCourses();
+            } else {
+                // If enrollment fails, decrement the course capacity back
+                await fetch(`http://localhost:8080/api/courses/${courseId}/drop`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const errorData = await enrollResponse.json();
+                throw new Error(errorData.message || 'Failed to enroll in course');
+            }
+        } catch (error) {
+            console.error('Error enrolling in course:', error);
+            const errorMessage = document.getElementById('error-message');
+            errorMessage.textContent = error.message || 'Error enrolling in course. Please try again later.';
+            errorMessage.style.display = 'block';
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 3000);
+        }
     }
 
     function handleLogout() {
@@ -198,8 +325,8 @@
         window.location.replace('/login?logout');
     }
 
-    // Load courses when the page loads
-    loadCourses();
+    // Load user details and courses when the page loads
+    loadUserDetails().then(() => loadCourses());
     </script>
 </body>
 </html> 

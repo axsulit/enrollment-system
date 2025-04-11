@@ -8,5 +8,6 @@ CREATE TABLE IF NOT EXISTS enrollments (
     professor_name VARCHAR(100),
     status VARCHAR(20) NOT NULL,
     enrolled_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    dropped_at TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ); 
