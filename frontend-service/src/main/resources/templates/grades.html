@@ -159,10 +159,34 @@
 </head>
 <body>
     <script>
-    // Check authentication
-    (function() {
+    // Check authentication and role
+    (async function() {
         const token = localStorage.getItem('jwtToken');
         if (!token) {
+            window.location.replace('/login');
+            return;
+        }
+
+        try {
+            const response = await fetch('http://localhost:8080/api/auth/user', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                const userData = await response.json();
+                // Redirect faculty to faculty grades page
+                if (userData.roles.includes('ROLE_FACULTY')) {
+                    window.location.replace('/faculty/grades');
+                    return;
+                }
+            } else {
+                localStorage.removeItem('jwtToken');
+                window.location.replace('/login');
+            }
+        } catch (error) {
+            console.error('Error checking user role:', error);
             window.location.replace('/login');
         }
     })();
