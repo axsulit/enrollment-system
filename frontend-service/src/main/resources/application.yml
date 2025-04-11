@@ -1,0 +1,30 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: frontend-service
+  thymeleaf:
+    cache: false
+  security:
+    oauth2:
+      client:
+        registration:
+          enrollment:
+            client-id: enrollment-client
+            client-secret: enrollment-secret
+            scope: openid,profile,email
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:
+          enrollment:
+            authorization-uri: http://localhost:8080/api/auth/oauth2/authorize
+            token-uri: http://localhost:8080/api/auth/oauth2/token
+            user-info-uri: http://localhost:8080/api/auth/userinfo
+            user-name-attribute: sub
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics 

@@ -1,0 +1,18 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: frontend-service
+  thymeleaf:
+    cache: true
+  security:
+    jwt:
+      secret: ${JWT_SECRET}
+      expiration: 86400000 # 24 hours
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics 

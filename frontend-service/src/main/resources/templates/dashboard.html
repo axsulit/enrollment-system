@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Dashboard - Enrollment System</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <header>
+            <h1>Enrollment System Dashboard</h1>
+            <form th:action="@{/api/auth/logout}" method="post">
+                <button type="submit" class="btn btn-logout">Logout</button>
+            </form>
+        </header>
+        <main>
+            <div class="dashboard-content">
+                <h2>Welcome to your Dashboard</h2>
+                <div class="dashboard-menu">
+                    <div class="menu-item">
+                        <h3>Course Enrollment</h3>
+                        <a href="/courses" class="btn btn-primary">View Available Courses</a>
+                    </div>
+                    <div class="menu-item">
+                        <h3>My Courses</h3>
+                        <a href="/my-courses" class="btn btn-primary">View My Courses</a>
+                    </div>
+                    <div class="menu-item">
+                        <h3>Grades</h3>
+                        <a href="/grades" class="btn btn-primary">View Grades</a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html> 

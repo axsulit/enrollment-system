@@ -1,6 +1,18 @@
 version: '3.8'
 
 services:
+  frontend-service:
+    build: ./frontend-service
+    ports:
+      - "8085:8085"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - JWT_SECRET=${JWT_SECRET}
+    networks:
+      - enrollment-network
+    depends_on:
+      - api-gateway
+
   api-gateway:
     build: ./api-gateway
     ports:
