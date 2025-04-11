@@ -1,37 +1,77 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>My Enrollments - Enrollment System</title>
+    <title>My Enrollments - Animo Enrollment System</title>
     <link rel="stylesheet" href="/css/style.css">
     <style>
+        :root {
+            --dlsu-green: #006F4E;
+            --dlsu-light-green: #008C63;
+            --dlsu-lighter-green: #E6F3F0;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: var(--dlsu-lighter-green);
+            min-height: 100vh;
+        }
         .enrollments-container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 40px 20px;
         }
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .logo {
+            width: 60px;
+        }
+        h1 {
+            color: var(--dlsu-green);
+            margin: 0;
+            font-size: 24px;
+        }
+        .header-buttons {
+            display: flex;
+            gap: 10px;
         }
         .back-button, .logout-button {
-            background: #6c757d;
+            display: flex;
+            align-items: center;
+            gap: 8px;
             color: white;
             border: none;
             padding: 10px 20px;
             border-radius: 5px;
             cursor: pointer;
             text-decoration: none;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        .back-button {
+            background: var(--dlsu-green);
         }
         .back-button:hover {
-            background: #5a6268;
+            background: var(--dlsu-light-green);
         }
         .logout-button {
-            background: #dc3545;
+            background: #DC3545;
         }
         .logout-button:hover {
-            background: #c82333;
+            background: #C82333;
         }
         .enrollments-table {
             width: 100%;
@@ -39,53 +79,74 @@
             margin-top: 20px;
             background: white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            border-radius: 8px;
+            border-radius: 10px;
             overflow: hidden;
         }
         .enrollments-table th, .enrollments-table td {
-            padding: 12px 15px;
+            padding: 15px;
             text-align: left;
             border-bottom: 1px solid #ddd;
         }
         .enrollments-table th {
-            background-color: #f8f9fa;
+            background-color: var(--dlsu-green);
+            color: white;
             font-weight: 600;
+            white-space: nowrap;
         }
         .enrollments-table tr:hover {
             background-color: #f5f5f5;
         }
+        .enrollments-table tr:last-child td {
+            border-bottom: none;
+        }
         .drop-button {
-            background: #dc3545;
+            background: #DC3545;
             color: white;
             border: none;
             padding: 8px 16px;
             border-radius: 4px;
             cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
         .drop-button:hover {
-            background: #c82333;
+            background: #C82333;
+            transform: translateY(-1px);
         }
         .drop-button:disabled {
             background: #6c757d;
             cursor: not-allowed;
+            transform: none;
         }
         .status-enrolled {
-            color: #28a745;
+            color: var(--dlsu-green);
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
         .status-dropped {
-            color: #dc3545;
+            color: #DC3545;
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
         .error-message {
-            color: #dc3545;
-            padding: 10px;
+            padding: 12px;
+            border-radius: 5px;
             margin: 10px 0;
-            background: #f8d7da;
-            border-radius: 4px;
+            font-size: 14px;
             display: none;
+            background-color: #FEE8E7;
+            color: #DC3545;
+            border: 1px solid #FFD0D4;
         }
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <script>
@@ -100,10 +161,19 @@
 
     <div class="enrollments-container">
         <div class="header">
-            <h1>My Enrollments</h1>
-            <div>
-                <a href="/dashboard" class="back-button">Back to Dashboard</a>
-                <button onclick="handleLogout()" class="logout-button">Logout</button>
+            <div class="header-left">
+                <img src="https://www.dlsu.edu.ph/wp-content/uploads/2018/11/dlsu-logo.png" alt="DLSU Logo" class="logo">
+                <h1>My Enrollments</h1>
+            </div>
+            <div class="header-buttons">
+                <a href="/dashboard" class="back-button">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Dashboard
+                </a>
+                <button onclick="handleLogout()" class="logout-button">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
             </div>
         </div>
 
@@ -175,15 +245,26 @@
                         <td>${enrollment.courseName}</td>
                         <td>${enrollment.scheduleDays}</td>
                         <td>${enrollment.professorName}</td>
-                        <td class="status-${enrollment.status.toLowerCase()}">${enrollment.status}</td>
+                        <td>
+                            <span class="status-${enrollment.status.toLowerCase()}">
+                                ${enrollment.status === 'ENROLLED' ? 
+                                    '<i class="fas fa-check-circle"></i>' : 
+                                    '<i class="fas fa-times-circle"></i>'}
+                                ${enrollment.status}
+                            </span>
+                        </td>
                         <td>${formatDate(enrollment.enrolledAt)}</td>
                         <td>${enrollment.droppedAt ? formatDate(enrollment.droppedAt) : '-'}</td>
                         <td>
                             ${enrollment.status === 'ENROLLED' ? 
                                 `<button class="drop-button" onclick="handleDrop(${enrollment.studentId}, ${enrollment.courseId})">
+                                    <i class="fas fa-trash-alt"></i>
                                     Drop
                                 </button>` : 
-                                `<button class="drop-button" disabled>Dropped</button>`
+                                `<button class="drop-button" disabled>
+                                    <i class="fas fa-ban"></i>
+                                    Dropped
+                                </button>`
                             }
                         </td>
                     </tr>

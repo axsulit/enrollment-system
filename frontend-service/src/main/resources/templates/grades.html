@@ -1,91 +1,161 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>My Grades - Enrollment System</title>
+    <title>My Grades - Animo Enrollment System</title>
     <link rel="stylesheet" href="/css/style.css">
     <style>
+        :root {
+            --dlsu-green: #006F4E;
+            --dlsu-light-green: #008C63;
+            --dlsu-lighter-green: #E6F3F0;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: var(--dlsu-lighter-green);
+            min-height: 100vh;
+        }
         .grades-container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 40px 20px;
         }
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .logo {
+            width: 60px;
+        }
+        h1 {
+            color: var(--dlsu-green);
+            margin: 0;
+            font-size: 24px;
+        }
+        .header-buttons {
+            display: flex;
+            gap: 10px;
         }
         .back-button, .logout-button {
-            background: #6c757d;
+            display: flex;
+            align-items: center;
+            gap: 8px;
             color: white;
             border: none;
             padding: 10px 20px;
             border-radius: 5px;
             cursor: pointer;
             text-decoration: none;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        .back-button {
+            background: var(--dlsu-green);
         }
         .back-button:hover {
-            background: #5a6268;
+            background: var(--dlsu-light-green);
         }
         .logout-button {
-            background: #dc3545;
+            background: #DC3545;
         }
         .logout-button:hover {
-            background: #c82333;
+            background: #C82333;
         }
         .term-section {
             margin-bottom: 40px;
             background: white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            border-radius: 8px;
+            border-radius: 10px;
             overflow: hidden;
         }
         .term-header {
-            background: #f8f9fa;
-            padding: 15px;
-            border-bottom: 2px solid #dee2e6;
+            background: var(--dlsu-green);
+            padding: 15px 20px;
+            border-bottom: 2px solid var(--dlsu-light-green);
         }
         .term-header h2 {
             margin: 0;
             font-size: 1.2em;
-            color: #333;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         .grades-table {
             width: 100%;
             border-collapse: collapse;
         }
         .grades-table th, .grades-table td {
-            padding: 12px 15px;
+            padding: 15px 20px;
             text-align: left;
             border-bottom: 1px solid #ddd;
         }
         .grades-table th {
-            background-color: #f8f9fa;
+            background-color: var(--dlsu-lighter-green);
+            color: var(--dlsu-green);
             font-weight: 600;
+            white-space: nowrap;
         }
         .grades-table tr:hover {
             background-color: #f5f5f5;
         }
+        .grades-table tr:last-child td {
+            border-bottom: none;
+        }
         .term-summary {
-            background: #f8f9fa;
-            padding: 15px;
-            border-top: 1px solid #dee2e6;
+            background: var(--dlsu-lighter-green);
+            padding: 15px 20px;
+            border-top: 1px solid #ddd;
             display: flex;
             justify-content: flex-end;
-            gap: 20px;
+            gap: 30px;
         }
         .term-summary span {
+            color: var(--dlsu-green);
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         .error-message {
-            color: #dc3545;
-            padding: 10px;
+            padding: 12px;
+            border-radius: 5px;
             margin: 10px 0;
-            background: #f8d7da;
-            border-radius: 4px;
+            font-size: 14px;
             display: none;
+            background-color: #FEE8E7;
+            color: #DC3545;
+            border: 1px solid #FFD0D4;
+        }
+        .grade-value {
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: var(--dlsu-lighter-green);
+            color: var(--dlsu-green);
+        }
+        .grade-value.passed {
+            background: #E8F6EF;
+            color: var(--dlsu-green);
+        }
+        .grade-value.no-grade {
+            background: #F8F9FA;
+            color: #6C757D;
         }
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <script>
@@ -100,10 +170,19 @@
 
     <div class="grades-container">
         <div class="header">
-            <h1>My Grades</h1>
-            <div>
-                <a href="/dashboard" class="back-button">Back to Dashboard</a>
-                <button onclick="handleLogout()" class="logout-button">Logout</button>
+            <div class="header-left">
+                <img src="https://www.dlsu.edu.ph/wp-content/uploads/2018/11/dlsu-logo.png" alt="DLSU Logo" class="logo">
+                <h1>My Grades</h1>
+            </div>
+            <div class="header-buttons">
+                <a href="/dashboard" class="back-button">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Dashboard
+                </a>
+                <button onclick="handleLogout()" class="logout-button">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
             </div>
         </div>
 
@@ -175,7 +254,7 @@
         const gradesContent = document.getElementById('grades-content');
         
         if (grades.length === 0) {
-            gradesContent.innerHTML = '<p style="text-align: center;">No grades available</p>';
+            gradesContent.innerHTML = '<p style="text-align: center; color: #666;">No grades available</p>';
             return;
         }
 
@@ -208,7 +287,10 @@
             return `
                 <div class="term-section">
                     <div class="term-header">
-                        <h2>AY ${termData.schoolYear}, Term ${termData.term}</h2>
+                        <h2>
+                            <i class="fas fa-graduation-cap"></i>
+                            AY ${termData.schoolYear}, Term ${termData.term}
+                        </h2>
                     </div>
                     <table class="grades-table">
                         <thead>
@@ -224,15 +306,25 @@
                                 <tr>
                                     <td>${grade.courseCode}</td>
                                     <td>${grade.courseName}</td>
-                                    <td>${formatGrade(grade.gradeValue)}</td>
+                                    <td>
+                                        <span class="grade-value ${getGradeClass(grade.gradeValue)}">
+                                            ${formatGrade(grade.gradeValue)}
+                                        </span>
+                                    </td>
                                     <td>${grade.units}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
                     </table>
                     <div class="term-summary">
-                        <span>Term GPA: ${calculateTermGPA(termGrades)}</span>
-                        <span>Total Units: ${calculateTotalUnits(termGrades)}</span>
+                        <span>
+                            <i class="fas fa-calculator"></i>
+                            Term GPA: ${calculateTermGPA(termGrades)}
+                        </span>
+                        <span>
+                            <i class="fas fa-book"></i>
+                            Total Units: ${calculateTotalUnits(termGrades)}
+                        </span>
                     </div>
                 </div>
             `;
@@ -257,6 +349,12 @@
         return gradeMap[gradeValue] || gradeValue;
     }
 
+    function getGradeClass(gradeValue) {
+        if (gradeValue === 'PASSED') return 'passed';
+        if (gradeValue === 'NO_GRADE') return 'no-grade';
+        return '';
+    }
+
     function calculateTermGPA(grades) {
         const validGrades = grades.filter(grade => 
             grade.gradeValue !== 'PASSED' && grade.gradeValue !== 'NO_GRADE'
@@ -279,7 +377,7 @@
 
     function handleLogout() {
         localStorage.removeItem('jwtToken');
-        window.location.replace('/login');
+        window.location.replace('/login?logout');
     }
 
     // Load user details and grades when the page loads
