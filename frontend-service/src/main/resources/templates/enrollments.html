@@ -239,6 +239,15 @@
                     return;
                 }
 
+                // Sort enrollments by most recent first
+                enrollments.sort((a, b) => {
+                    // For dropped courses, use droppedAt date
+                    // For enrolled courses, use enrolledAt date
+                    const dateA = a.status === 'DROPPED' ? new Date(a.droppedAt) : new Date(a.enrolledAt);
+                    const dateB = b.status === 'DROPPED' ? new Date(b.droppedAt) : new Date(b.enrolledAt);
+                    return dateB - dateA; // Descending order (most recent first)
+                });
+
                 enrollmentsList.innerHTML = enrollments.map(enrollment => `
                     <tr>
                         <td>${enrollment.courseCode}</td>
