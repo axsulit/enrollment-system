@@ -24,6 +24,7 @@ services:
     depends_on:
       - auth-service
       - course-service
+      - enrollment-service
 
   auth-service:
     build: ./auth-service
@@ -47,6 +48,20 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://enrollment-db:5432/enrollment_db?currentSchema=course
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=postgres
+    networks:
+      - enrollment-network
+    depends_on:
+      - enrollment-db
+
+  enrollment-service:
+    build: ./enrollment-service
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://enrollment-db:5432/enrollment_db?currentSchema=enrollment
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - JWT_SECRET=${JWT_SECRET}
     networks:
       - enrollment-network
     depends_on:
