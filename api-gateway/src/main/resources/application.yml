@@ -30,8 +30,8 @@ spring:
             - StripPrefix=1
             - name: JwtAuthenticationFilter
 
-        - id: grades-service
-          uri: http://grades-service:8084
+        - id: grade-service
+          uri: http://grade-service:8084
           predicates:
             - Path=/api/grades/**
           filters:
