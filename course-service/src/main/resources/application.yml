@@ -1,0 +1,23 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: course-service
+  datasource:
+    url: jdbc:postgresql://enrollment-db:5432/enrollment_db?currentSchema=course
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: course
+  sql:
+    init:
+      schema-locations: classpath:init.sql
+      mode: always
