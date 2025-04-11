@@ -145,6 +145,65 @@
             color: #DC3545;
             border: 1px solid #FFD0D4;
         }
+        /* Add styles for the confirmation popup */
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .popup-content {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            z-index: 1001;
+        }
+
+        .popup-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .popup-confirm {
+            background: #DC3545;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .popup-cancel {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .popup-confirm:hover {
+            background: #C82333;
+        }
+
+        .popup-cancel:hover {
+            background: #5a6268;
+        }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -182,6 +241,7 @@
         <table class="enrollments-table">
             <thead>
                 <tr>
+                    <th>ID</th>
                     <th>Course Code</th>
                     <th>Course Name</th>
                     <th>Schedule</th>
@@ -194,10 +254,22 @@
             </thead>
             <tbody id="enrollments-list">
                 <tr>
-                    <td colspan="8" style="text-align: center;">Loading enrollments...</td>
+                    <td colspan="9" style="text-align: center;">Loading enrollments...</td>
                 </tr>
             </tbody>
         </table>
+    </div>
+
+    <!-- Add the confirmation popup HTML -->
+    <div id="confirmationPopup" class="popup-overlay">
+        <div class="popup-content">
+            <h3>Confirm Drop Course</h3>
+            <p>Are you sure you want to drop this course?</p>
+            <div class="popup-buttons">
+                <button class="popup-confirm" onclick="confirmDrop()">Yes, Drop Course</button>
+                <button class="popup-cancel" onclick="cancelDrop()">No, Keep Course</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -235,7 +307,7 @@
                 const enrollmentsList = document.getElementById('enrollments-list');
                 
                 if (enrollments.length === 0) {
-                    enrollmentsList.innerHTML = '<tr><td colspan="8" style="text-align: center;">No enrollments found</td></tr>';
+                    enrollmentsList.innerHTML = '<tr><td colspan="9" style="text-align: center;">No enrollments found</td></tr>';
                     return;
                 }
 
@@ -250,6 +322,7 @@
 
                 enrollmentsList.innerHTML = enrollments.map(enrollment => `
                     <tr>
+                        <td>${enrollment.courseId}</td>
                         <td>${enrollment.courseCode}</td>
                         <td>${enrollment.courseName}</td>
                         <td>${enrollment.scheduleDays}</td>
@@ -266,7 +339,7 @@
                         <td>${enrollment.droppedAt ? formatDate(enrollment.droppedAt) : '-'}</td>
                         <td>
                             ${enrollment.status === 'ENROLLED' ? 
-                                `<button class="drop-button" onclick="handleDrop(${enrollment.studentId}, ${enrollment.courseId})">
+                                `<button class="drop-button" onclick="showDropConfirmation(${enrollment.studentId}, ${enrollment.courseId}, '${enrollment.courseCode}')">
                                     <i class="fas fa-trash-alt"></i>
                                     Drop
                                 </button>` : 
@@ -300,6 +373,26 @@
             minute: '2-digit',
             hour12: true
         });
+    }
+
+    let dropCourseData = null; // Store course data for confirmation
+
+    function showDropConfirmation(studentId, courseId, courseCode) {
+        dropCourseData = { studentId, courseId, courseCode };
+        document.getElementById('confirmationPopup').style.display = 'block';
+    }
+
+    function cancelDrop() {
+        document.getElementById('confirmationPopup').style.display = 'none';
+        dropCourseData = null;
+    }
+
+    async function confirmDrop() {
+        if (!dropCourseData) return;
+        
+        document.getElementById('confirmationPopup').style.display = 'none';
+        await handleDrop(dropCourseData.studentId, dropCourseData.courseId);
+        dropCourseData = null;
     }
 
     async function handleDrop(studentId, courseId) {
