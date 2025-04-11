@@ -58,4 +58,34 @@ public class GradeController {
     public ResponseEntity<GpaResult> calculateCumulativeGpa(@PathVariable Integer studentId) {
         return ResponseEntity.ok(gradeService.calculateCumulativeGpa(studentId));
     }
+
+    // New endpoints for faculty grade management
+    @GetMapping("/faculty/school-years")
+    public ResponseEntity<List<String>> getAvailableSchoolYears() {
+        return ResponseEntity.ok(gradeService.getAvailableSchoolYears());
+    }
+
+    @GetMapping("/faculty/courses")
+    public ResponseEntity<List<String>> getCoursesForTerm(
+            @RequestParam String schoolYear,
+            @RequestParam Integer term) {
+        return ResponseEntity.ok(gradeService.getCoursesForTerm(schoolYear, term));
+    }
+
+    @GetMapping("/faculty/course-grades")
+    public ResponseEntity<List<Grade>> getCourseGrades(
+            @RequestParam String courseCode,
+            @RequestParam String schoolYear,
+            @RequestParam Integer term) {
+        return ResponseEntity.ok(gradeService.getCourseGrades(courseCode, schoolYear, term));
+    }
+
+    @PostMapping("/faculty/bulk-submit")
+    public ResponseEntity<List<Grade>> submitBulkGrades(@RequestBody List<Grade> grades) {
+        try {
+            return ResponseEntity.ok(gradeService.submitBulkGrades(grades));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }

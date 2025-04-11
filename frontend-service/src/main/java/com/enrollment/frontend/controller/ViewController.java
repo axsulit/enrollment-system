@@ -40,4 +40,9 @@ public class ViewController {
     public String grades() {
         return "grades";
     }
+
+    @GetMapping("/faculty/grades")
+    public String facultyGrades() {
+        return "faculty-grades";
+    }
 } 

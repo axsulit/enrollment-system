@@ -53,6 +53,25 @@ public class GradeService {
         return calculateGpa(grades);
     }
 
+    // New methods for faculty grade management
+    public List<String> getAvailableSchoolYears() {
+        return gradeRepository.findDistinctSchoolYears();
+    }
+
+    public List<String> getCoursesForTerm(String schoolYear, Integer term) {
+        return gradeRepository.findDistinctCourseCodesBySchoolYearAndTerm(schoolYear, term);
+    }
+
+    public List<Grade> getCourseGrades(String courseCode, String schoolYear, Integer term) {
+        return gradeRepository.findByCourseCodeAndSchoolYearAndTerm(courseCode, schoolYear, term);
+    }
+
+    @Transactional
+    public List<Grade> submitBulkGrades(List<Grade> grades) {
+        grades.forEach(this::validateGrade);
+        return gradeRepository.saveAll(grades);
+    }
+
     private GpaResult calculateGpa(List<Grade> grades) {
         BigDecimal totalUnits = BigDecimal.ZERO;
         BigDecimal totalGradePoints = BigDecimal.ZERO;
@@ -81,6 +100,8 @@ public class GradeService {
             throw new IllegalArgumentException("Units must be greater than 0");
         }
         
-        // Add more validations as needed
+        if (grade.getGradeValue() == null) {
+            throw new IllegalArgumentException("Grade value cannot be null");
+        }
     }
 } 

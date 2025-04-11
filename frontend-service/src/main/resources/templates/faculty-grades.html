@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Grade Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .filters {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        select, button {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+
+        select.grade-select {
+            width: 100px;
+        }
+
+        .message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .nav-bar {
+            background-color: #333;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+
+        .nav-bar a {
+            color: white;
+            text-decoration: none;
+            padding: 10px;
+            margin-right: 10px;
+        }
+
+        .nav-bar a:hover {
+            background-color: #555;
+        }
+
+        .logout-btn {
+            float: right;
+            background-color: #dc3545;
+        }
+
+        .logout-btn:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/courses">Courses</a>
+        <a href="/faculty/grades">Grades</a>
+        <button class="logout-btn" onclick="handleLogout()">Logout</button>
+    </div>
+
+    <div class="container">
+        <h1>Faculty Grade Management</h1>
+        
+        <div class="message success" id="success-message"></div>
+        <div class="message error" id="error-message"></div>
+
+        <div class="filters">
+            <select id="school-year">
+                <option value="">Select School Year</option>
+            </select>
+
+            <select id="term">
+                <option value="">Select Term</option>
+                <option value="1">Term 1</option>
+                <option value="2">Term 2</option>
+                <option value="3">Term 3</option>
+            </select>
+
+            <select id="course">
+                <option value="">Select Course</option>
+            </select>
+
+            <button onclick="loadGrades()">Load Students</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Student ID</th>
+                    <th>Course Code</th>
+                    <th>Course Name</th>
+                    <th>Units</th>
+                    <th>Grade</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+            <tbody id="grades-list">
+                <tr>
+                    <td colspan="6" style="text-align: center;">Select filters to load students</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div style="margin-top: 20px; text-align: right;">
+            <button onclick="submitGrades()">Submit Grades</button>
+        </div>
+    </div>
+
+    <script>
+        let currentFacultyId = null;
+        let currentGrades = [];
+
+        async function loadUserDetails() {
+            try {
+                const token = localStorage.getItem('jwtToken');
+                if (!token) {
+                    window.location.replace('/login');
+                    return;
+                }
+
+                const response = await fetch('http://localhost:8080/api/auth/user', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const userData = await response.json();
+                    currentFacultyId = userData.id;
+                    
+                    // Check if user is faculty
+                    if (!userData.roles.includes('ROLE_FACULTY')) {
+                        window.location.replace('/dashboard');
+                    }
+                } else if (response.status === 401) {
+                    localStorage.removeItem('jwtToken');
+                    window.location.replace('/login');
+                }
+            } catch (error) {
+                console.error('Error loading user details:', error);
+            }
+        }
+
+        async function loadSchoolYears() {
+            try {
+                const token = localStorage.getItem('jwtToken');
+                const response = await fetch('http://localhost:8080/api/grades/faculty/school-years', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const schoolYears = await response.json();
+                    const select = document.getElementById('school-year');
+                    select.innerHTML = '<option value="">Select School Year</option>' +
+                        schoolYears.map(year => `<option value="${year}">${year}</option>`).join('');
+                }
+            } catch (error) {
+                console.error('Error loading school years:', error);
+            }
+        }
+
+        async function loadCourses() {
+            const schoolYear = document.getElementById('school-year').value;
+            const term = document.getElementById('term').value;
+
+            if (!schoolYear || !term) {
+                document.getElementById('course').innerHTML = '<option value="">Select Course</option>';
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('jwtToken');
+                const response = await fetch(`http://localhost:8080/api/grades/faculty/courses?schoolYear=${schoolYear}&term=${term}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const courses = await response.json();
+                    const select = document.getElementById('course');
+                    select.innerHTML = '<option value="">Select Course</option>' +
+                        courses.map(code => `<option value="${code}">${code}</option>`).join('');
+                }
+            } catch (error) {
+                console.error('Error loading courses:', error);
+            }
+        }
+
+        async function loadGrades() {
+            const schoolYear = document.getElementById('school-year').value;
+            const term = document.getElementById('term').value;
+            const courseCode = document.getElementById('course').value;
+
+            if (!schoolYear || !term || !courseCode) {
+                showError('Please select all filters');
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('jwtToken');
+                const response = await fetch(
+                    `http://localhost:8080/api/grades/faculty/course-grades?courseCode=${courseCode}&schoolYear=${schoolYear}&term=${term}`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    }
+                );
+
+                if (response.ok) {
+                    currentGrades = await response.json();
+                    displayGrades(currentGrades);
+                }
+            } catch (error) {
+                console.error('Error loading grades:', error);
+                showError('Error loading grades');
+            }
+        }
+
+        function displayGrades(grades) {
+            const tbody = document.getElementById('grades-list');
+            if (grades.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No students found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = grades.map((grade, index) => `
+                <tr>
+                    <td>${grade.studentId}</td>
+                    <td>${grade.courseCode}</td>
+                    <td>${grade.courseName}</td>
+                    <td>${grade.units}</td>
+                    <td>
+                        <select class="grade-select" onchange="updateGrade(${index}, this.value)">
+                            <option value="">Select Grade</option>
+                            <option value="FOUR_POINT_ZERO" ${grade.gradeValue === 'FOUR_POINT_ZERO' ? 'selected' : ''}>4.00</option>
+                            <option value="THREE_POINT_FIVE" ${grade.gradeValue === 'THREE_POINT_FIVE' ? 'selected' : ''}>3.50</option>
+                            <option value="THREE_POINT_ZERO" ${grade.gradeValue === 'THREE_POINT_ZERO' ? 'selected' : ''}>3.00</option>
+                            <option value="TWO_POINT_FIVE" ${grade.gradeValue === 'TWO_POINT_FIVE' ? 'selected' : ''}>2.50</option>
+                            <option value="TWO_POINT_ZERO" ${grade.gradeValue === 'TWO_POINT_ZERO' ? 'selected' : ''}>2.00</option>
+                            <option value="ONE_POINT_FIVE" ${grade.gradeValue === 'ONE_POINT_FIVE' ? 'selected' : ''}>1.50</option>
+                            <option value="ONE_POINT_ZERO" ${grade.gradeValue === 'ONE_POINT_ZERO' ? 'selected' : ''}>1.00</option>
+                            <option value="ZERO" ${grade.gradeValue === 'ZERO' ? 'selected' : ''}>0.00</option>
+                            <option value="PASSED" ${grade.gradeValue === 'PASSED' ? 'selected' : ''}>P</option>
+                            <option value="NO_GRADE" ${grade.gradeValue === 'NO_GRADE' ? 'selected' : ''}>NGS</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="text" value="${grade.remarks || ''}" 
+                               onchange="updateRemarks(${index}, this.value)"
+                               placeholder="Add remarks">
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updateGrade(index, value) {
+            currentGrades[index].gradeValue = value;
+        }
+
+        function updateRemarks(index, value) {
+            currentGrades[index].remarks = value;
+        }
+
+        async function submitGrades() {
+            const ungraded = currentGrades.some(grade => !grade.gradeValue);
+            if (ungraded) {
+                showError('Please assign grades to all students');
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('jwtToken');
+                const response = await fetch('http://localhost:8080/api/grades/faculty/bulk-submit', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(currentGrades)
+                });
+
+                if (response.ok) {
+                    showSuccess('Grades submitted successfully');
+                    await loadGrades(); // Reload the grades
+                } else {
+                    showError('Error submitting grades');
+                }
+            } catch (error) {
+                console.error('Error submitting grades:', error);
+                showError('Error submitting grades');
+            }
+        }
+
+        function showSuccess(message) {
+            const successMessage = document.getElementById('success-message');
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            setTimeout(() => {
+                successMessage.style.display = 'none';
+            }, 3000);
+        }
+
+        function showError(message) {
+            const errorMessage = document.getElementById('error-message');
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 3000);
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('jwtToken');
+            window.location.replace('/login?logout');
+        }
+
+        // Event listeners for filter changes
+        document.getElementById('school-year').addEventListener('change', loadCourses);
+        document.getElementById('term').addEventListener('change', loadCourses);
+
+        // Initialize the page
+        loadUserDetails().then(() => {
+            loadSchoolYears();
+        });
+    </script>
+</body>
+</html> 
