@@ -46,7 +46,7 @@ public class Course {
     private Integer currentEnrollees = 0;
 
     public enum DayOfWeek {
-        MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY
+        M, T, W, H, F, S
     }
 
     public enum ModeOfLearning {
