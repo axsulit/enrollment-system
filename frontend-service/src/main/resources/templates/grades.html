@@ -96,6 +96,7 @@
         .grades-table {
             width: 100%;
             border-collapse: collapse;
+            table-layout: fixed;
         }
         .grades-table th, .grades-table td {
             padding: 15px 20px;
@@ -108,26 +109,21 @@
             font-weight: 600;
             white-space: nowrap;
         }
+        .grades-table th:nth-child(1) { width: 15%; }  /* Course Code */
+        .grades-table th:nth-child(2) { width: 45%; }  /* Course Name */
+        .grades-table th:nth-child(3) { width: 10%; }  /* Units */
+        .grades-table th:nth-child(4) { width: 15%; }  /* Grade */
+        .grades-table th:nth-child(5) { width: 15%; }  /* Remarks */
+        
+        .grades-table td {
+            vertical-align: middle;
+            word-wrap: break-word;
+        }
         .grades-table tr:hover {
             background-color: #f5f5f5;
         }
         .grades-table tr:last-child td {
             border-bottom: none;
-        }
-        .term-summary {
-            background: var(--dlsu-lighter-green);
-            padding: 15px 20px;
-            border-top: 1px solid #ddd;
-            display: flex;
-            justify-content: flex-end;
-            gap: 30px;
-        }
-        .term-summary span {
-            color: var(--dlsu-green);
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
         .error-message {
             padding: 12px;
@@ -145,6 +141,9 @@
             border-radius: 4px;
             background: var(--dlsu-lighter-green);
             color: var(--dlsu-green);
+            display: inline-block;
+            min-width: 45px;
+            text-align: center;
         }
         .grade-value.passed {
             background: #E8F6EF;
@@ -181,6 +180,8 @@
                     window.location.replace('/faculty/grades');
                     return;
                 }
+                window.currentStudentId = userData.id.toString();
+                loadGrades();
             } else {
                 localStorage.removeItem('jwtToken');
                 window.location.replace('/login');
@@ -190,171 +191,124 @@
             window.location.replace('/login');
         }
     })();
-    </script>
-
-    <div class="grades-container">
-        <div class="header">
-            <div class="header-left">
-                <img src="https://www.dlsu.edu.ph/wp-content/uploads/2018/11/dlsu-logo.png" alt="DLSU Logo" class="logo">
-                <h1>My Grades</h1>
-            </div>
-            <div class="header-buttons">
-                <a href="/dashboard" class="back-button">
-                    <i class="fas fa-arrow-left"></i>
-                    Back to Dashboard
-                </a>
-                <button onclick="handleLogout()" class="logout-button">
-                    <i class="fas fa-sign-out-alt"></i>
-                    Logout
-                </button>
-            </div>
-        </div>
-
-        <div id="error-message" class="error-message"></div>
-        <div id="grades-content"></div>
-    </div>
-
-    <script>
-    let currentStudentId = null;
-
-    async function loadUserDetails() {
-        try {
-            const token = localStorage.getItem('jwtToken');
-            if (!token) {
-                window.location.replace('/login');
-                return;
-            }
-
-            const response = await fetch('http://localhost:8080/api/auth/user', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (response.ok) {
-                const userData = await response.json();
-                currentStudentId = userData.id;
-                loadGrades();
-            } else if (response.status === 401) {
-                localStorage.removeItem('jwtToken');
-                window.location.replace('/login');
-            }
-        } catch (error) {
-            console.error('Error loading user details:', error);
-        }
-    }
 
     async function loadGrades() {
         try {
             const token = localStorage.getItem('jwtToken');
-            if (!token) {
-                window.location.replace('/login');
-                return;
-            }
-
-            const response = await fetch(`http://localhost:8080/api/grades/student/${currentStudentId}`, {
+            const gradesResponse = await fetch(`http://localhost:8080/api/grades/student/${window.currentStudentId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
 
-            if (response.ok) {
-                const grades = await response.json();
-                displayGrades(grades);
-            } else if (response.status === 401) {
-                localStorage.removeItem('jwtToken');
-                window.location.replace('/login');
-            } else {
-                throw new Error('Failed to load grades');
+            if (!gradesResponse.ok) {
+                const errorText = await gradesResponse.text();
+                throw new Error(errorText || 'Failed to load grades');
             }
+
+            const grades = await gradesResponse.json();
+            
+            // Group grades by school year and term
+            const groupedGrades = {};
+            for (const grade of grades) {
+                const key = `${grade.schoolYear}-${grade.term}`;
+                if (!groupedGrades[key]) {
+                    groupedGrades[key] = {
+                        term: grade.term,
+                        grades: []
+                    };
+                }
+                groupedGrades[key].grades.push(grade);
+            }
+
+            // Sort by school year (descending) and term
+            const sortedKeys = Object.keys(groupedGrades).sort((a, b) => {
+                const [yearA, termA] = a.split('-');
+                const [yearB, termB] = b.split('-');
+                return yearB.localeCompare(yearA) || parseInt(termA) - parseInt(termB);
+            });
+
+            const gradesContent = document.getElementById('grades-content');
+            if (sortedKeys.length === 0) {
+                gradesContent.innerHTML = `
+                    <div class="term-section">
+                        <div class="term-header">
+                            <h2>No grades available</h2>
+                        </div>
+                        <div style="padding: 20px; text-align: center;">
+                            No grades have been recorded yet.
+                        </div>
+                    </div>`;
+                return;
+            }
+
+            gradesContent.innerHTML = await Promise.all(sortedKeys.map(async key => {
+                const termData = groupedGrades[key];
+                const formattedHeader = `Term ${termData.term}`;
+
+                // Fetch course details for all courses in this term
+                const courseDetails = await Promise.all(termData.grades.map(async grade => {
+                    try {
+                        const courseResponse = await fetch(`http://localhost:8080/api/courses/${grade.courseId}`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        if (courseResponse.ok) {
+                            const course = await courseResponse.json();
+                            return {
+                                ...grade,
+                                courseCode: course.courseCode,
+                                courseName: course.courseName
+                            };
+                        }
+                        return grade;
+                    } catch (error) {
+                        console.error('Error fetching course details:', error);
+                        return grade;
+                    }
+                }));
+
+                return `
+                    <div class="term-section">
+                        <div class="term-header">
+                            <h2>
+                                <i class="fas fa-calendar-alt"></i>
+                                ${formattedHeader}
+                            </h2>
+                        </div>
+                        <table class="grades-table">
+                            <thead>
+                                <tr>
+                                    <th>Course Code</th>
+                                    <th>Course Name</th>
+                                    <th>Units</th>
+                                    <th>Grade</th>
+                                    <th>Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${courseDetails.map(grade => `
+                                    <tr>
+                                        <td>${grade.courseCode || 'N/A'}</td>
+                                        <td>${grade.courseName || 'N/A'}</td>
+                                        <td>${grade.units}</td>
+                                        <td>
+                                            <span class="grade-value ${getGradeClass(grade.gradeValue)}">
+                                                ${formatGrade(grade.gradeValue)}
+                                            </span>
+                                        </td>
+                                        <td>${grade.remarks || '-'}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>`;
+            })).then(sections => sections.join(''));
+
         } catch (error) {
             console.error('Error loading grades:', error);
             document.getElementById('error-message').style.display = 'block';
-            document.getElementById('error-message').textContent = 'Error loading grades. Please try again later.';
+            document.getElementById('error-message').textContent = `Error loading grades: ${error.message}`;
         }
-    }
-
-    function displayGrades(grades) {
-        const gradesContent = document.getElementById('grades-content');
-        
-        if (grades.length === 0) {
-            gradesContent.innerHTML = '<p style="text-align: center; color: #666;">No grades available</p>';
-            return;
-        }
-
-        // Group grades by school year and term
-        const groupedGrades = {};
-        grades.forEach(grade => {
-            const key = `${grade.schoolYear}-${grade.term}`;
-            if (!groupedGrades[key]) {
-                groupedGrades[key] = {
-                    schoolYear: grade.schoolYear,
-                    term: grade.term,
-                    grades: []
-                };
-            }
-            groupedGrades[key].grades.push(grade);
-        });
-
-        // Sort by school year (descending) and term (descending)
-        const sortedKeys = Object.keys(groupedGrades).sort((a, b) => {
-            const [yearA, termA] = a.split('-');
-            const [yearB, termB] = b.split('-');
-            if (yearB !== yearA) return yearB.localeCompare(yearA);
-            return parseInt(termB) - parseInt(termA);
-        });
-
-        const html = sortedKeys.map(key => {
-            const termData = groupedGrades[key];
-            const termGrades = termData.grades;
-
-            return `
-                <div class="term-section">
-                    <div class="term-header">
-                        <h2>
-                            <i class="fas fa-graduation-cap"></i>
-                            AY ${termData.schoolYear}, Term ${termData.term}
-                        </h2>
-                    </div>
-                    <table class="grades-table">
-                        <thead>
-                            <tr>
-                                <th>Course Code</th>
-                                <th>Course Title</th>
-                                <th>Grade</th>
-                                <th>Unit(s)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${termGrades.map(grade => `
-                                <tr>
-                                    <td>${grade.courseCode}</td>
-                                    <td>${grade.courseName}</td>
-                                    <td>
-                                        <span class="grade-value ${getGradeClass(grade.gradeValue)}">
-                                            ${formatGrade(grade.gradeValue)}
-                                        </span>
-                                    </td>
-                                    <td>${grade.units}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                    <div class="term-summary">
-                        <span>
-                            <i class="fas fa-calculator"></i>
-                            Term GPA: ${calculateTermGPA(termGrades)}
-                        </span>
-                        <span>
-                            <i class="fas fa-book"></i>
-                            Total Units: ${calculateTotalUnits(termGrades)}
-                        </span>
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        gradesContent.innerHTML = html;
     }
 
     function formatGrade(gradeValue) {
@@ -379,33 +333,31 @@
         return '';
     }
 
-    function calculateTermGPA(grades) {
-        const validGrades = grades.filter(grade => 
-            grade.gradeValue !== 'PASSED' && grade.gradeValue !== 'NO_GRADE'
-        );
-
-        if (validGrades.length === 0) return 'N/A';
-
-        const totalPoints = validGrades.reduce((sum, grade) => {
-            const numericGrade = parseFloat(formatGrade(grade.gradeValue));
-            return sum + (numericGrade * grade.units);
-        }, 0);
-
-        const totalUnits = validGrades.reduce((sum, grade) => sum + grade.units, 0);
-        return (totalPoints / totalUnits).toFixed(3);
-    }
-
-    function calculateTotalUnits(grades) {
-        return grades.reduce((sum, grade) => sum + grade.units, 0).toFixed(2);
-    }
-
     function handleLogout() {
         localStorage.removeItem('jwtToken');
         window.location.replace('/login?logout');
     }
-
-    // Load user details and grades when the page loads
-    loadUserDetails();
     </script>
+
+    <div class="grades-container">
+        <div class="header">
+            <div class="header-left">
+                <h1>My Grades</h1>
+            </div>
+            <div class="header-buttons">
+                <a href="/dashboard" class="back-button">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Dashboard
+                </a>
+                <button onclick="handleLogout()" class="logout-button">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
+            </div>
+        </div>
+
+        <div id="error-message" class="error-message"></div>
+        <div id="grades-content"></div>
+    </div>
 </body>
-</html> 
+</html>

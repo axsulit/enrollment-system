@@ -16,11 +16,11 @@ import java.util.List;
 public class GradeService {
     private final GradeRepository gradeRepository;
 
-    public List<Grade> getStudentGrades(Integer studentId) {
+    public List<Grade> getStudentGrades(Long studentId) {
         return gradeRepository.findByStudentId(studentId);
     }
 
-    public List<Grade> getTermGrades(Integer studentId, String schoolYear, Integer term) {
+    public List<Grade> getTermGrades(Long studentId, String schoolYear, Integer term) {
         return gradeRepository.findByStudentIdAndSchoolYearAndTerm(studentId, schoolYear, term);
     }
 
@@ -43,27 +43,31 @@ public class GradeService {
         return gradeRepository.save(grade);
     }
 
-    public GpaResult calculateTermGpa(Integer studentId, String schoolYear, Integer term) {
+    public GpaResult calculateTermGpa(Long studentId, String schoolYear, Integer term) {
         List<Grade> grades = gradeRepository.findGradesForTermGpaCalculation(studentId, schoolYear, term);
         return calculateGpa(grades);
     }
 
-    public GpaResult calculateCumulativeGpa(Integer studentId) {
+    public GpaResult calculateCumulativeGpa(Long studentId) {
         List<Grade> grades = gradeRepository.findGradesForGpaCalculation(studentId);
         return calculateGpa(grades);
     }
 
-    // New methods for faculty grade management
+    // Faculty grade management methods
     public List<String> getAvailableSchoolYears() {
         return gradeRepository.findDistinctSchoolYears();
     }
 
-    public List<String> getCoursesForTerm(String schoolYear, Integer term) {
-        return gradeRepository.findDistinctCourseCodesBySchoolYearAndTerm(schoolYear, term);
+    public List<Long> getFacultyCourses(String schoolYear, Integer term) {
+        return gradeRepository.findDistinctCourseIdsBySchoolYearAndTerm(schoolYear, term);
     }
 
-    public List<Grade> getCourseGrades(String courseCode, String schoolYear, Integer term) {
-        return gradeRepository.findByCourseCodeAndSchoolYearAndTerm(courseCode, schoolYear, term);
+    public List<Grade> getCourseGrades(Long courseId, String schoolYear, Integer term) {
+        return gradeRepository.findByCourseIdAndSchoolYearAndTerm(courseId, schoolYear, term);
+    }
+
+    public List<Grade> getFacultyGrades(Long facultyId) {
+        return gradeRepository.findByFacultyId(facultyId);
     }
 
     @Transactional
@@ -77,18 +81,25 @@ public class GradeService {
         BigDecimal totalGradePoints = BigDecimal.ZERO;
 
         for (Grade grade : grades) {
-            BigDecimal numericValue = grade.getGradeValue().getNumericValue();
-            if (numericValue != null) {  // Skip P and NGS grades
-                totalUnits = totalUnits.add(grade.getUnits());
-                totalGradePoints = totalGradePoints.add(numericValue.multiply(grade.getUnits()));
+            if (grade.getGradeValue() != null) {
+                String gradeValue = grade.getGradeValue().getValue();
+                try {
+                    BigDecimal numericGrade = new BigDecimal(gradeValue);
+                    totalUnits = totalUnits.add(grade.getUnits());
+                    totalGradePoints = totalGradePoints.add(numericGrade.multiply(grade.getUnits()));
+                } catch (NumberFormatException e) {
+                    // Skip non-numeric grades (P, NGS)
+                    continue;
+                }
             }
         }
 
-        BigDecimal gpa = totalUnits.compareTo(BigDecimal.ZERO) > 0 
-            ? totalGradePoints.divide(totalUnits, 2, RoundingMode.HALF_UP)
-            : BigDecimal.ZERO;
+        if (totalUnits.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal gpa = totalGradePoints.divide(totalUnits, 2, RoundingMode.HALF_UP);
+            return new GpaResult(gpa, totalUnits);
+        }
 
-        return new GpaResult(gpa, totalUnits);
+        return new GpaResult(BigDecimal.ZERO, BigDecimal.ZERO);
     }
 
     private void validateGrade(Grade grade) {
@@ -102,6 +113,14 @@ public class GradeService {
         
         if (grade.getGradeValue() == null) {
             throw new IllegalArgumentException("Grade value cannot be null");
+        }
+
+        if (grade.getCourseId() == null) {
+            throw new IllegalArgumentException("Course ID cannot be null");
+        }
+
+        if (grade.getStudentId() == null) {
+            throw new IllegalArgumentException("Student ID cannot be null");
         }
     }
 } 

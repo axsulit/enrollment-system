@@ -15,12 +15,12 @@ public class EnrollmentController {
     private final EnrollmentService enrollmentService;
 
     @GetMapping("/student/{studentId}")
-    public ResponseEntity<List<Enrollment>> getEnrollmentsByStudentId(@PathVariable Integer studentId) {
+    public ResponseEntity<List<Enrollment>> getEnrollmentsByStudentId(@PathVariable Long studentId) {
         return ResponseEntity.ok(enrollmentService.getEnrollmentsByStudentId(studentId));
     }
 
     @GetMapping("/student/{studentId}/active")
-    public ResponseEntity<List<Enrollment>> getActiveEnrollmentsByStudentId(@PathVariable Integer studentId) {
+    public ResponseEntity<List<Enrollment>> getActiveEnrollmentsByStudentId(@PathVariable Long studentId) {
         return ResponseEntity.ok(enrollmentService.getActiveEnrollmentsByStudentId(studentId));
     }
 
@@ -35,7 +35,7 @@ public class EnrollmentController {
 
     @PostMapping("/student/{studentId}/course/{courseId}/drop")
     public ResponseEntity<Enrollment> dropCourse(
-            @PathVariable Integer studentId,
+            @PathVariable Long studentId,
             @PathVariable Integer courseId) {
         try {
             return ResponseEntity.ok(enrollmentService.dropCourse(studentId, courseId));

@@ -217,230 +217,130 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="header-left">
-                <img src="https://www.dlsu.edu.ph/wp-content/uploads/2018/11/dlsu-logo.png" alt="DLSU Logo" class="logo">
-                <h1>Faculty Grade Management</h1>
-            </div>
-            <div class="header-buttons">
-                <button onclick="handleLogout()" class="logout-button">
-                    <i class="fas fa-sign-out-alt"></i>
-                    Logout
-                </button>
-            </div>
-        </div>
-
-        <div class="filters">
-            <div class="filter-group">
-                <label for="schoolYear">School Year</label>
-                <select id="schoolYear" required>
-                    <option value="">Select School Year</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label for="term">Term</label>
-                <select id="term" required>
-                    <option value="">Select Term</option>
-                    <option value="1">Term 1</option>
-                    <option value="2">Term 2</option>
-                    <option value="3">Term 3</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label for="course">Course</label>
-                <select id="course" required>
-                    <option value="">Select Course</option>
-                </select>
-            </div>
-            <button onclick="loadGrades()" class="load-button">
-                <i class="fas fa-sync"></i>
-                Load Students
-            </button>
-        </div>
-
-        <div id="success-message" class="message success-message"></div>
-        <div id="error-message" class="message error-message"></div>
-
-        <table class="grades-table">
-            <thead>
-                <tr>
-                    <th>Student ID</th>
-                    <th>Student Name</th>
-                    <th>Course Name</th>
-                    <th>Grade</th>
-                    <th>Remarks</th>
-                </tr>
-            </thead>
-            <tbody id="students-list">
-                <tr>
-                    <td colspan="5" style="text-align: center;">Select filters and click "Load Students"</td>
-                </tr>
-            </tbody>
-        </table>
-
-        <button onclick="submitGrades()" class="submit-button">
-            <i class="fas fa-save"></i>
-            Submit Grades
-        </button>
-    </div>
-
     <script>
-        // Check authentication
-        (function() {
-            const token = localStorage.getItem('jwtToken');
-            if (!token) {
-                window.location.replace('/login');
-            }
-        })();
+    // Check authentication and role
+    (async function() {
+        const token = localStorage.getItem('jwtToken');
+        if (!token) {
+            window.location.replace('/login');
+            return;
+        }
 
-        let currentFacultyId = null;
-        let currentGrades = [];
+        try {
+            const response = await fetch('http://localhost:8080/api/auth/user', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
 
-        async function loadUserDetails() {
-            try {
-                const token = localStorage.getItem('jwtToken');
-                if (!token) {
-                    window.location.replace('/login');
+            if (response.ok) {
+                const userData = await response.json();
+                if (!userData.roles.includes('ROLE_FACULTY')) {
+                    window.location.replace('/dashboard');
                     return;
                 }
+                window.currentFacultyId = userData.id;
+            } else {
+                localStorage.removeItem('jwtToken');
+                window.location.replace('/login');
+            }
+        } catch (error) {
+            console.error('Error checking user role:', error);
+            window.location.replace('/login');
+        }
+    })();
 
-                const response = await fetch('http://localhost:8080/api/auth/user', {
+    let courseData = {};
+
+    async function loadCourses(schoolYear, term) {
+        try {
+            const token = localStorage.getItem('jwtToken');
+            const response = await fetch(`http://localhost:8080/api/grades/faculty/courses?schoolYear=${schoolYear}&term=${term}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to load courses');
+            
+            const courseIds = await response.json();
+            
+            // Fetch course details for each ID
+            const courseDetailsPromises = courseIds.map(courseId =>
+                fetch(`http://localhost:8080/api/courses/${courseId}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
-                });
+                }).then(res => res.json())
+            );
 
-                if (response.ok) {
-                    const userData = await response.json();
-                    currentFacultyId = userData.id;
-                    
-                    // Check if user is faculty
-                    if (!userData.roles.includes('ROLE_FACULTY')) {
-                        window.location.replace('/dashboard');
-                    }
-                } else if (response.status === 401) {
-                    localStorage.removeItem('jwtToken');
-                    window.location.replace('/login');
-                }
-            } catch (error) {
-                console.error('Error loading user details:', error);
-            }
+            const courses = await Promise.all(courseDetailsPromises);
+            
+            // Update course select
+            const courseSelect = document.getElementById('courseSelect');
+            courseSelect.innerHTML = '<option value="">Select Course</option>';
+            
+            courses.forEach(course => {
+                courseData[course.id] = course;
+                const option = document.createElement('option');
+                option.value = course.id;
+                option.textContent = `${course.courseCode} - ${course.courseName}`;
+                courseSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error loading courses:', error);
+            showError('Failed to load courses. Please try again.');
+        }
+    }
+
+    async function loadGrades() {
+        const schoolYear = document.getElementById('schoolYearSelect').value;
+        const term = document.getElementById('termSelect').value;
+        const courseId = document.getElementById('courseSelect').value;
+
+        if (!schoolYear || !term || !courseId) {
+            showError('Please select all filters');
+            return;
         }
 
-        async function loadSchoolYears() {
-            try {
-                const token = localStorage.getItem('jwtToken');
-                const response = await fetch('http://localhost:8080/api/grades/faculty/school-years', {
+        try {
+            const token = localStorage.getItem('jwtToken');
+            const response = await fetch(`http://localhost:8080/api/grades/faculty/course-grades?courseId=${courseId}&schoolYear=${schoolYear}&term=${term}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to load grades');
+            
+            const grades = await response.json();
+            
+            // Fetch student details for each grade
+            const studentDetailsPromises = grades.map(grade =>
+                fetch(`http://localhost:8080/api/auth/user/${grade.studentId}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
-                });
+                }).then(res => res.json())
+            );
 
-                if (response.ok) {
-                    const schoolYears = await response.json();
-                    const select = document.getElementById('schoolYear');
-                    select.innerHTML = '<option value="">Select School Year</option>' +
-                        schoolYears.map(year => `<option value="${year}">${year}</option>`).join('');
-                }
-            } catch (error) {
-                console.error('Error loading school years:', error);
-            }
-        }
+            const students = await Promise.all(studentDetailsPromises);
+            
+            // Create a map of student details
+            const studentMap = {};
+            students.forEach(student => {
+                studentMap[student.id] = student;
+            });
 
-        async function loadCourses() {
-            const schoolYear = document.getElementById('schoolYear').value;
-            const term = document.getElementById('term').value;
-
-            if (!schoolYear || !term) {
-                document.getElementById('course').innerHTML = '<option value="">Select Course</option>';
-                return;
-            }
-
-            try {
-                const token = localStorage.getItem('jwtToken');
-                const response = await fetch(`http://localhost:8080/api/grades/faculty/courses?schoolYear=${schoolYear}&term=${term}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (response.ok) {
-                    const courses = await response.json();
-                    const select = document.getElementById('course');
-                    select.innerHTML = '<option value="">Select Course</option>' +
-                        courses.map(code => `<option value="${code}">${code}</option>`).join('');
-                }
-            } catch (error) {
-                console.error('Error loading courses:', error);
-            }
-        }
-
-        async function loadGrades() {
-            const schoolYear = document.getElementById('schoolYear').value;
-            const term = document.getElementById('term').value;
-            const courseCode = document.getElementById('course').value;
-
-            if (!schoolYear || !term || !courseCode) {
-                showError('Please select all filters');
-                return;
-            }
-
-            try {
-                const token = localStorage.getItem('jwtToken');
-                const response = await fetch(
-                    `http://localhost:8080/api/grades/faculty/course-grades?courseCode=${courseCode}&schoolYear=${schoolYear}&term=${term}`,
-                    {
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    }
-                );
-
-                if (response.ok) {
-                    currentGrades = await response.json();
-                    
-                    // Fetch student details for each grade
-                    for (let grade of currentGrades) {
-                        try {
-                            const userResponse = await fetch(`http://localhost:8080/api/auth/user/${grade.studentId}`, {
-                                headers: {
-                                    'Authorization': `Bearer ${token}`
-                                }
-                            });
-                            if (userResponse.ok) {
-                                const userData = await userResponse.json();
-                                grade.studentName = `${userData.lastName}, ${userData.firstName}`;
-                            }
-                        } catch (error) {
-                            console.error('Error fetching student details:', error);
-                            grade.studentName = 'Name not available';
-                        }
-                    }
-                    
-                    displayGrades(currentGrades);
-                }
-            } catch (error) {
-                console.error('Error loading grades:', error);
-                showError('Error loading grades');
-            }
-        }
-
-        function displayGrades(grades) {
-            const tbody = document.getElementById('students-list');
-            if (grades.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No students found</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = grades.map((grade, index) => `
+            // Update table
+            const tbody = document.querySelector('.grades-table tbody');
+            tbody.innerHTML = grades.map(grade => `
                 <tr>
                     <td>${grade.studentId}</td>
-                    <td>${grade.studentName || 'Name not available'}</td>
-                    <td>${grade.courseName}</td>
+                    <td>${studentMap[grade.studentId] ? `${studentMap[grade.studentId].lastName}, ${studentMap[grade.studentId].firstName}` : 'Unknown'}</td>
+                    <td>${courseData[grade.courseId] ? courseData[grade.courseId].courseCode : ''}</td>
                     <td>
-                        <select class="grade-select" onchange="updateGrade(${index}, this.value)">
-                            <option value="NO_GRADE" ${!grade.gradeValue || grade.gradeValue === 'NO_GRADE' ? 'selected' : ''}>NGS</option>
+                        <select class="grade-select" data-grade-id="${grade.id}">
                             <option value="FOUR_POINT_ZERO" ${grade.gradeValue === 'FOUR_POINT_ZERO' ? 'selected' : ''}>4.00</option>
                             <option value="THREE_POINT_FIVE" ${grade.gradeValue === 'THREE_POINT_FIVE' ? 'selected' : ''}>3.50</option>
                             <option value="THREE_POINT_ZERO" ${grade.gradeValue === 'THREE_POINT_ZERO' ? 'selected' : ''}>3.00</option>
@@ -450,86 +350,162 @@
                             <option value="ONE_POINT_ZERO" ${grade.gradeValue === 'ONE_POINT_ZERO' ? 'selected' : ''}>1.00</option>
                             <option value="ZERO" ${grade.gradeValue === 'ZERO' ? 'selected' : ''}>0.00</option>
                             <option value="PASSED" ${grade.gradeValue === 'PASSED' ? 'selected' : ''}>P</option>
+                            <option value="NO_GRADE" ${grade.gradeValue === 'NO_GRADE' ? 'selected' : ''}>NGS</option>
                         </select>
                     </td>
                     <td>
-                        <input type="text" value="${grade.remarks || ''}" 
-                               onchange="updateRemarks(${index}, this.value)"
-                               placeholder="Add remarks" class="remarks-input">
+                        <input type="text" class="remarks-input" data-grade-id="${grade.id}" value="${grade.remarks || ''}" placeholder="Add remarks">
                     </td>
                 </tr>
             `).join('');
+
+            document.getElementById('submitButton').style.display = 'block';
+        } catch (error) {
+            console.error('Error loading grades:', error);
+            showError('Failed to load grades. Please try again.');
         }
+    }
 
-        function updateGrade(index, value) {
-            currentGrades[index].gradeValue = value;
-        }
+    async function submitGrades() {
+        const grades = [];
+        const gradeSelects = document.querySelectorAll('.grade-select');
+        const remarksInputs = document.querySelectorAll('.remarks-input');
 
-        function updateRemarks(index, value) {
-            currentGrades[index].remarks = value;
-        }
-
-        async function submitGrades() {
-            const ungraded = currentGrades.some(grade => !grade.gradeValue);
-            if (ungraded) {
-                showError('Please assign grades to all students');
-                return;
-            }
-
-            try {
-                const token = localStorage.getItem('jwtToken');
-                const response = await fetch('http://localhost:8080/api/grades/faculty/bulk-submit', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(currentGrades)
-                });
-
-                if (response.ok) {
-                    showSuccess('Grades submitted successfully');
-                    await loadGrades(); // Reload the grades
-                } else {
-                    showError('Error submitting grades');
-                }
-            } catch (error) {
-                console.error('Error submitting grades:', error);
-                showError('Error submitting grades');
-            }
-        }
-
-        function showSuccess(message) {
-            const successMessage = document.getElementById('success-message');
-            successMessage.textContent = message;
-            successMessage.style.display = 'block';
-            setTimeout(() => {
-                successMessage.style.display = 'none';
-            }, 3000);
-        }
-
-        function showError(message) {
-            const errorMessage = document.getElementById('error-message');
-            errorMessage.textContent = message;
-            errorMessage.style.display = 'block';
-            setTimeout(() => {
-                errorMessage.style.display = 'none';
-            }, 3000);
-        }
-
-        function handleLogout() {
-            localStorage.removeItem('jwtToken');
-            window.location.replace('/login?logout');
-        }
-
-        // Event listeners for filter changes
-        document.getElementById('schoolYear').addEventListener('change', loadCourses);
-        document.getElementById('term').addEventListener('change', loadCourses);
-
-        // Initialize the page
-        loadUserDetails().then(() => {
-            loadSchoolYears();
+        gradeSelects.forEach((select, index) => {
+            const gradeId = select.dataset.gradeId;
+            const remarks = remarksInputs[index].value;
+            grades.push({
+                id: gradeId,
+                gradeValue: select.value,
+                remarks: remarks
+            });
         });
+
+        try {
+            const token = localStorage.getItem('jwtToken');
+            const response = await fetch('http://localhost:8080/api/grades/faculty/bulk-submit', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(grades)
+            });
+
+            if (!response.ok) {
+                const error = await response.text();
+                throw new Error(error);
+            }
+
+            showSuccess('Grades submitted successfully!');
+            await loadGrades(); // Reload the grades
+        } catch (error) {
+            console.error('Error submitting grades:', error);
+            showError(error.message || 'Failed to submit grades. Please try again.');
+        }
+    }
+
+    function showSuccess(message) {
+        const successMessage = document.getElementById('success-message');
+        successMessage.textContent = message;
+        successMessage.style.display = 'block';
+        setTimeout(() => successMessage.style.display = 'none', 5000);
+    }
+
+    function showError(message) {
+        const errorMessage = document.getElementById('error-message');
+        errorMessage.textContent = message;
+        errorMessage.style.display = 'block';
+        setTimeout(() => errorMessage.style.display = 'none', 5000);
+    }
+
+    function handleLogout() {
+        localStorage.removeItem('jwtToken');
+        window.location.replace('/login?logout');
+    }
+
+    // Initialize school year and term
+    document.addEventListener('DOMContentLoaded', function() {
+        const schoolYearSelect = document.getElementById('schoolYearSelect');
+        schoolYearSelect.value = 'A.Y. 2024-2025';
+        
+        const termSelect = document.getElementById('termSelect');
+        termSelect.value = '2';
+        
+        // Load courses for the default school year and term
+        loadCourses('A.Y. 2024-2025', 2);
+    });
     </script>
+
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <img src="https://www.dlsu.edu.ph/wp-content/uploads/2018/11/dlsu-logo.png" alt="DLSU Logo" class="logo">
+                <h1>Faculty Grade Management</h1>
+            </div>
+            <div class="header-buttons">
+                <a href="/faculty/dashboard" class="back-button">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Dashboard
+                </a>
+                <button onclick="handleLogout()" class="logout-button">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
+            </div>
+        </div>
+
+        <div id="success-message" class="message success-message"></div>
+        <div id="error-message" class="message error-message"></div>
+
+        <div class="filters">
+            <div class="filter-group">
+                <label for="schoolYearSelect">School Year</label>
+                <select id="schoolYearSelect" onchange="loadCourses(this.value, document.getElementById('termSelect').value)">
+                    <option value="A.Y. 2024-2025">A.Y. 2024-2025</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="termSelect">Term</label>
+                <select id="termSelect" onchange="loadCourses(document.getElementById('schoolYearSelect').value, this.value)">
+                    <option value="1">Term 1</option>
+                    <option value="2">Term 2</option>
+                    <option value="3">Term 3</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="courseSelect">Course</label>
+                <select id="courseSelect">
+                    <option value="">Select Course</option>
+                </select>
+            </div>
+            <button onclick="loadGrades()" class="load-button">
+                <i class="fas fa-sync"></i>
+                Load Grades
+            </button>
+        </div>
+
+        <table class="grades-table">
+            <thead>
+                <tr>
+                    <th>Student ID</th>
+                    <th>Student Name</th>
+                    <th>Course Code</th>
+                    <th>Grade</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="5" style="text-align: center;">Select a course to view grades</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <button id="submitButton" onclick="submitGrades()" class="submit-button" style="display: none;">
+            <i class="fas fa-save"></i>
+            Submit Grades
+        </button>
+    </div>
 </body>
 </html> 

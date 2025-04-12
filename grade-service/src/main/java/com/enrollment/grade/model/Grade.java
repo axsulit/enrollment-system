@@ -17,19 +17,19 @@ public class Grade {
     private Long id;
 
     @Column(name = "student_id", nullable = false)
-    private Integer studentId;
+    private Long studentId;
 
     @Column(name = "school_year", nullable = false)
-    private String schoolYear;  // e.g., "2023-2024"
+    private String schoolYear;  // e.g., "A.Y. 2024-2025"
 
     @Column(name = "term", nullable = false)
     private Integer term;  // 1, 2, or 3
 
-    @Column(name = "course_code", nullable = false)
-    private String courseCode;
+    @Column(name = "course_id", nullable = false)
+    private Long courseId;
 
-    @Column(name = "course_name", nullable = false)
-    private String courseName;
+    @Column(name = "faculty_id")
+    private Long facultyId;
 
     @Column(name = "grade_value", nullable = false)
     @Enumerated(EnumType.STRING)

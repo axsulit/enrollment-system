@@ -21,11 +21,11 @@ public class EnrollmentService {
     @Value("${course.service.url:http://course-service:8082}")
     private String courseServiceUrl;
 
-    public List<Enrollment> getEnrollmentsByStudentId(Integer studentId) {
+    public List<Enrollment> getEnrollmentsByStudentId(Long studentId) {
         return enrollmentRepository.findByStudentId(studentId);
     }
 
-    public List<Enrollment> getActiveEnrollmentsByStudentId(Integer studentId) {
+    public List<Enrollment> getActiveEnrollmentsByStudentId(Long studentId) {
         return enrollmentRepository.findByStudentIdAndStatus(studentId, EnrollmentStatus.ENROLLED);
     }
 
@@ -46,7 +46,7 @@ public class EnrollmentService {
     }
 
     @Transactional
-    public Enrollment dropCourse(Integer studentId, Integer courseId) {
+    public Enrollment dropCourse(Long studentId, Integer courseId) {
         // Find any enrollment for this student and course
         List<Enrollment> enrollments = enrollmentRepository.findByStudentIdAndCourseIdOrderByIdDesc(studentId, courseId);
         

@@ -8,30 +8,32 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface GradeRepository extends JpaRepository<Grade, Long> {
-    List<Grade> findByStudentId(Integer studentId);
+    List<Grade> findByStudentId(Long studentId);
     
-    List<Grade> findByStudentIdAndSchoolYearAndTerm(Integer studentId, String schoolYear, Integer term);
+    List<Grade> findByStudentIdAndSchoolYearAndTerm(Long studentId, String schoolYear, Integer term);
     
-    @Query("SELECT g FROM Grade g WHERE g.studentId = :studentId AND g.gradeValue != 'PASSED' AND g.gradeValue != 'NO_GRADE'")
-    List<Grade> findGradesForGpaCalculation(@Param("studentId") Integer studentId);
+    @Query("SELECT g FROM Grade g WHERE g.studentId = :studentId AND g.gradeValue NOT IN ('PASSED', 'NO_GRADE', 'NGS')")
+    List<Grade> findGradesForGpaCalculation(@Param("studentId") Long studentId);
     
-    @Query("SELECT g FROM Grade g WHERE g.studentId = :studentId AND g.schoolYear = :schoolYear AND g.term = :term AND g.gradeValue != 'PASSED' AND g.gradeValue != 'NO_GRADE'")
+    @Query("SELECT g FROM Grade g WHERE g.studentId = :studentId AND g.schoolYear = :schoolYear AND g.term = :term AND g.gradeValue NOT IN ('PASSED', 'NO_GRADE', 'NGS')")
     List<Grade> findGradesForTermGpaCalculation(
-        @Param("studentId") Integer studentId,
+        @Param("studentId") Long studentId,
         @Param("schoolYear") String schoolYear,
         @Param("term") Integer term
     );
 
-    // New methods for faculty grade management
-    List<Grade> findByCourseCode(String courseCode);
+    // Faculty grade management methods
+    List<Grade> findByFacultyId(Long facultyId);
     
-    List<Grade> findByCourseCodeAndSchoolYearAndTerm(String courseCode, String schoolYear, Integer term);
+    List<Grade> findByCourseId(Long courseId);
+    
+    List<Grade> findByCourseIdAndSchoolYearAndTerm(Long courseId, String schoolYear, Integer term);
     
     @Query("SELECT DISTINCT g.schoolYear FROM Grade g ORDER BY g.schoolYear DESC")
     List<String> findDistinctSchoolYears();
     
-    @Query("SELECT DISTINCT g.courseCode FROM Grade g WHERE g.schoolYear = :schoolYear AND g.term = :term")
-    List<String> findDistinctCourseCodesBySchoolYearAndTerm(
+    @Query("SELECT DISTINCT g.courseId FROM Grade g WHERE g.schoolYear = :schoolYear AND g.term = :term")
+    List<Long> findDistinctCourseIdsBySchoolYearAndTerm(
         @Param("schoolYear") String schoolYear,
         @Param("term") Integer term
     );

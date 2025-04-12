@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface EnrollmentRepository extends JpaRepository<Enrollment, Integer> {
-    List<Enrollment> findByStudentId(Integer studentId);
-    List<Enrollment> findByStudentIdAndStatus(Integer studentId, EnrollmentStatus status);
-    Optional<Enrollment> findByStudentIdAndCourseId(Integer studentId, Integer courseId);
-    List<Enrollment> findByStudentIdAndCourseIdOrderByIdDesc(Integer studentId, Integer courseId);
+    List<Enrollment> findByStudentId(Long studentId);
+    List<Enrollment> findByStudentIdAndStatus(Long studentId, EnrollmentStatus status);
+    Optional<Enrollment> findByStudentIdAndCourseId(Long studentId, Integer courseId);
+    List<Enrollment> findByStudentIdAndCourseIdOrderByIdDesc(Long studentId, Integer courseId);
 } 
