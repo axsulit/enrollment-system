@@ -33,6 +33,11 @@ public class CourseController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/faculty/{userId}")
+    public ResponseEntity<List<Course>> getFacultyCourses(@PathVariable Long userId) {
+        return ResponseEntity.ok(courseService.getCoursesByProfessorId(userId));
+    }
+
     @PostMapping
     public ResponseEntity<Course> createCourse(@RequestBody Course course) {
         try {

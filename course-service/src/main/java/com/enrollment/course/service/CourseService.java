@@ -26,6 +26,10 @@ public class CourseService {
         return courseRepository.findByCourseCode(courseCode);
     }
 
+    public List<Course> getCoursesByProfessorId(Long professorId) {
+        return courseRepository.findByProfessorId(professorId);
+    }
+
     @Transactional
     public Course createCourse(Course course) {
         return courseRepository.save(course);

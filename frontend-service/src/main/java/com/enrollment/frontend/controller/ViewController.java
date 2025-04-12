@@ -45,4 +45,9 @@ public class ViewController {
     public String facultyGrades() {
         return "faculty-grades";
     }
+
+    @GetMapping("/faculty/dashboard")
+    public String facultyDashboard() {
+        return "faculty-dashboard";
+    }
 } 

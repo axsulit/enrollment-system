@@ -160,7 +160,7 @@
                 if (response.ok) {
                     const userData = await response.json();
                     if (userData.roles.includes('ROLE_FACULTY')) {
-                        window.location.href = '/faculty/grades';
+                        window.location.href = '/faculty/dashboard';
                     } else {
                         window.location.href = '/dashboard';
                     }
@@ -205,7 +205,7 @@
                         const userData = await userResponse.json();
                         // Check if user is faculty and redirect accordingly
                         if (userData.roles.includes('ROLE_FACULTY')) {
-                            window.location.replace('/faculty/grades');
+                            window.location.replace('/faculty/dashboard');
                         } else {
                             window.location.replace('/dashboard');
                         }
