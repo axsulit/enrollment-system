@@ -284,6 +284,26 @@
                     return;
                 }
 
+                // Fetch professor details for each course
+                for (let course of courses) {
+                    try {
+                        const professorResponse = await fetch(`http://localhost:8080/api/auth/user/${course.professorId}`, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        if (professorResponse.ok) {
+                            const professorData = await professorResponse.json();
+                            course.professorName = `${professorData.lastName}, ${professorData.firstName}`;
+                        } else {
+                            course.professorName = 'Name not available';
+                        }
+                    } catch (error) {
+                        console.error('Error fetching professor details:', error);
+                        course.professorName = 'Name not available';
+                    }
+                }
+
                 coursesList.innerHTML = courses.map(course => {
                     const isEnrolled = activeEnrollments.some(e => e.courseId === course.id);
                     const isFull = course.currentEnrollees >= course.maxEnrollees;
@@ -303,7 +323,7 @@
                         <td>${course.currentEnrollees}/${course.maxEnrollees}</td>
                         <td>
                             <button class="enroll-button" 
-                                onclick="handleEnroll('${course.id}', '${course.courseCode}', '${course.courseName}', '${course.scheduleDays.join(',')}', '${course.professorName}')"
+                                onclick="handleEnroll('${course.id}', '${course.courseCode}', '${course.courseName}', '${course.scheduleDays.join(',')}', '${course.professorId}')"
                                 ${isEnrolled || isFull ? 'disabled' : ''}>
                                 ${isEnrolled ? 'Enrolled' : isFull ? 'Full' : 'Enroll'}
                             </button>
@@ -340,12 +360,25 @@
         return modes[mode] || mode;
     }
 
-    async function handleEnroll(courseId, courseCode, courseName, scheduleDays, professorName) {
+    async function handleEnroll(courseId, courseCode, courseName, scheduleDays, professorId) {
         try {
             const token = localStorage.getItem('jwtToken');
             if (!token) {
                 window.location.replace('/login');
                 return;
+            }
+
+            // Get professor details
+            const professorResponse = await fetch(`http://localhost:8080/api/auth/user/${professorId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            let professorName = 'Name not available';
+            if (professorResponse.ok) {
+                const professorData = await professorResponse.json();
+                professorName = `${professorData.lastName}, ${professorData.firstName}`;
             }
 
             // First, try to increment the course capacity

@@ -52,7 +52,7 @@ public class CourseService {
         course.setMaxEnrollees(courseDetails.getMaxEnrollees());
         course.setModeOfLearning(courseDetails.getModeOfLearning());
         course.setVenue(courseDetails.getVenue());
-        course.setProfessorName(courseDetails.getProfessorName());
+        course.setProfessorId(courseDetails.getProfessorId());
 
         return courseRepository.save(course);
     }

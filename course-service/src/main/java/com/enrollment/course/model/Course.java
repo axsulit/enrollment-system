@@ -42,8 +42,8 @@ public class Course {
     @Column(name = "venue")
     private String venue;
 
-    @Column(name = "professor_name", nullable = false)
-    private String professorName;
+    @Column(name = "professor_id", nullable = false)
+    private Long professorId;
 
     @Column(name = "current_enrollees", nullable = false)
     private Integer currentEnrollees = 0;
