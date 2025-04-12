@@ -14,7 +14,7 @@ public class Course {
     @Column(columnDefinition = "serial")
     private Integer id;
 
-    @Column(name = "course_code", unique = true, nullable = false, length = 10)
+    @Column(name = "course_code", unique = false, nullable = false, length = 10)
     private String courseCode;
 
     @Column(name = "course_name", nullable = false)

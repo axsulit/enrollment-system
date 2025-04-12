@@ -28,9 +28,6 @@ public class CourseService {
 
     @Transactional
     public Course createCourse(Course course) {
-        if (courseRepository.existsByCourseCode(course.getCourseCode())) {
-            throw new RuntimeException("Course code already exists");
-        }
         return courseRepository.save(course);
     }
 
