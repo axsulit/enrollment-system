@@ -178,8 +178,7 @@
                 const studentDetails = document.getElementById('studentDetails');
                 studentDetails.innerHTML = `
                     <p><strong>Student ID:</strong> ${data.id}</p>
-                    <p><strong>First Name:</strong> ${data.firstName}</p>
-                    <p><strong>Last Name:</strong> ${data.lastName}</p>
+                    <p><strong>Name:</strong> ${data.lastName}, ${data.firstName}</p>
                     <p><strong>Degree Program:</strong> ${data.degreeProgram || 'Not specified'}</p>
                     <p><strong>Email:</strong> ${data.email}</p>
                 `;
