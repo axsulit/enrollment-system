@@ -216,7 +216,7 @@
         </div>
 
         <div class="courses-section">
-            <h2><i class="fas fa-book"></i> My Courses</h2>
+            <h2><i class="fas fa-book"></i> My Courses This Term (<span id="courseCount">0</span>)</h2>
             <div id="coursesTableContainer">
                 <table class="courses-table">
                     <thead>
@@ -239,12 +239,6 @@
             </div>
         </div>
 
-        <div class="nav-buttons">
-            <a href="/faculty/grades" class="nav-button">
-                <i class="fas fa-graduation-cap"></i>
-                Manage Grades
-            </a>
-        </div>
     </div>
 
     <script>
@@ -303,6 +297,10 @@
             if (response.ok) {
                 const courses = await response.json();
                 const coursesTableBody = document.getElementById('coursesTableBody');
+                const courseCount = document.getElementById('courseCount');
+                
+                // Update the course count
+                courseCount.textContent = courses.length;
                 
                 if (courses.length === 0) {
                     coursesTableBody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No courses assigned</td></tr>';
