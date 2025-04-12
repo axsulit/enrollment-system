@@ -42,13 +42,6 @@
             gap: 20px;
         }
 
-        .logo {
-            width: 40px;
-            height: 40px;
-            object-fit: contain;
-            filter: brightness(0) saturate(100%) invert(23%) sepia(29%) saturate(1493%) hue-rotate(127deg) brightness(96%) contrast(102%);
-        }
-
         h1 {
             color: var(--dlsu-green);
             margin: 0;
@@ -289,7 +282,7 @@
             });
         } catch (error) {
             console.error('Error loading courses:', error);
-            showError('Failed to load courses. Please try again.');
+            showError('Failed to load. Please try again.');
         }
     }
 
@@ -440,7 +433,6 @@
     <div class="container">
         <div class="header">
             <div class="header-left">
-                <img src="https://www.dlsu.edu.ph/wp-content/uploads/2018/11/dlsu-logo.png" alt="DLSU Logo" class="logo">
                 <h1>Faculty Grade Management</h1>
             </div>
             <div class="header-buttons">

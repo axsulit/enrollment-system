@@ -307,7 +307,7 @@
         } catch (error) {
             console.error('Error loading grades:', error);
             document.getElementById('error-message').style.display = 'block';
-            document.getElementById('error-message').textContent = `Error loading grades: ${error.message}`;
+            document.getElementById('error-message').textContent = 'Error loading grades. Please try again later.';
         }
     }
 
