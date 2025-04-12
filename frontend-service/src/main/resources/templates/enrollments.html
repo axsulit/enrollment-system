@@ -320,6 +320,26 @@
                     return dateB - dateA; // Descending order (most recent first)
                 });
 
+                // Fetch professor names for each enrollment
+                for (let enrollment of enrollments) {
+                    try {
+                        const professorResponse = await fetch(`http://localhost:8080/api/auth/user/${enrollment.professorId}`, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        if (professorResponse.ok) {
+                            const professorData = await professorResponse.json();
+                            enrollment.professorName = `${professorData.lastName}, ${professorData.firstName}`;
+                        } else {
+                            enrollment.professorName = 'Name not available';
+                        }
+                    } catch (error) {
+                        console.error('Error fetching professor details:', error);
+                        enrollment.professorName = 'Name not available';
+                    }
+                }
+
                 enrollmentsList.innerHTML = enrollments.map(enrollment => `
                     <tr>
                         <td>${enrollment.courseId}</td>

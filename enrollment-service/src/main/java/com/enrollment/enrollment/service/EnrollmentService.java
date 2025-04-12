@@ -38,7 +38,7 @@ public class EnrollmentService {
         newEnrollment.setCourseCode(enrollment.getCourseCode());
         newEnrollment.setCourseName(enrollment.getCourseName());
         newEnrollment.setScheduleDays(enrollment.getScheduleDays());
-        newEnrollment.setProfessorName(enrollment.getProfessorName());
+        newEnrollment.setProfessorId(enrollment.getProfessorId());
         newEnrollment.setStatus(EnrollmentStatus.ENROLLED);
         newEnrollment.setEnrolledAt(LocalDateTime.now());
         

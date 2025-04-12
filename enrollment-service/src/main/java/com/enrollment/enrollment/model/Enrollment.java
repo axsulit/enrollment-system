@@ -17,10 +17,10 @@ public class Enrollment {
     private Long id;
 
     @Column(name = "student_id", nullable = false)
-    private Integer studentId;
+    private Long studentId;
 
     @Column(name = "course_id", nullable = false)
-    private Integer courseId;
+    private Long courseId;
 
     @Column(name = "course_code", nullable = false)
     private String courseCode;
@@ -31,8 +31,8 @@ public class Enrollment {
     @Column(name = "schedule_days")
     private String scheduleDays;
 
-    @Column(name = "professor_name")
-    private String professorName;
+    @Column(name = "professor_id")
+    private Long professorId;
 
     @Column(name = "status", nullable = false)
     @Enumerated(EnumType.STRING)
